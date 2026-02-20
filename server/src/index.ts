@@ -8,8 +8,12 @@ import { closeAgents } from './agents/registry.js';
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
 
+const corsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+  : ['http://localhost:5173', 'http://127.0.0.1:5173'];
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: corsOrigins,
   methods: ['GET', 'POST'],
 }));
 app.use(express.json());
