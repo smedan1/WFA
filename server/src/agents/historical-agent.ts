@@ -1,72 +1,52 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { MCPClient, runAgentLoop } from '../services/mcp-manager.js';
-import { MCP_CONFIGS } from '../config/mcp.js';
 import type { HistoricalDataPoint } from '../types/index.js';
 
-const SYSTEM_PROMPT = `You are HistoricalAgent. Your only job is to fetch historical stock prices using
-the get_historical_prices tool and return the result as a valid JSON array of data points:
-[
-  {
-    "date": "2024-01-01",
-    "open": 100.00,
-    "high": 105.00,
-    "low": 99.00,
-    "close": 103.00,
-    "volume": 1000000
-  }
-]
-Return ONLY a valid JSON array — no markdown fences, no prose. Sort by date ascending.
-Use null for any unavailable OHLCV fields. Dates must be in YYYY-MM-DD format.`;
+const YF_BASE = 'https://query1.finance.yahoo.com';
+const HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (compatible; WFA-App/1.0)',
+  'Accept': 'application/json',
+};
+
+const PERIOD_TO_RANGE: Record<string, string> = {
+  '1d': '1d', '5d': '5d', '1mo': '1mo', '3mo': '3mo',
+  '6mo': '6mo', '1y': '1y', '2y': '2y', '5y': '5y', 'max': 'max',
+};
 
 export class HistoricalAgent {
-  private anthropic: Anthropic;
-  private mcpClient: MCPClient | null = null;
+  constructor(_anthropic: Anthropic) {}
 
-  constructor(anthropic: Anthropic) {
-    this.anthropic = anthropic;
+  async initialize(): Promise<void> {}
+
+  async getHistoricalPrices(symbol: string, period = '3mo', interval = '1d'): Promise<HistoricalDataPoint[]> {
+    const range = PERIOD_TO_RANGE[period] ?? '3mo';
+    const url = `${YF_BASE}/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
+    const res = await fetch(url, { headers: HEADERS });
+    if (!res.ok) throw new Error(`Yahoo Finance returned ${res.status} for ${symbol}`);
+
+    const json = await res.json() as {
+      chart?: {
+        result?: {
+          timestamp?: number[];
+          indicators?: { quote?: { open?: (number | null)[]; high?: (number | null)[]; low?: (number | null)[]; close?: (number | null)[]; volume?: (number | null)[] }[] };
+        }[];
+      };
+    };
+
+    const result = json.chart?.result?.[0];
+    if (!result) throw new Error(`No historical data for ${symbol}`);
+
+    const timestamps = result.timestamp ?? [];
+    const q = result.indicators?.quote?.[0] ?? {};
+
+    return timestamps.map((ts, i) => ({
+      date: new Date(ts * 1000).toISOString().split('T')[0],
+      open: q.open?.[i] ?? 0,
+      high: q.high?.[i] ?? 0,
+      low: q.low?.[i] ?? 0,
+      close: q.close?.[i] ?? 0,
+      volume: q.volume?.[i] ?? 0,
+    }));
   }
 
-  async initialize(): Promise<void> {
-    this.mcpClient = new MCPClient('historical-yahoo');
-    await this.mcpClient.connectStdio(MCP_CONFIGS.yahooFinance);
-  }
-
-  async getHistoricalPrices(
-    symbol: string,
-    period = '3mo',
-    interval = '1d'
-  ): Promise<HistoricalDataPoint[]> {
-    if (!this.mcpClient) throw new Error('HistoricalAgent not initialized');
-
-    const tools = await this.mcpClient.listTools();
-    const toolExecutor = (name: string, input: Record<string, unknown>) =>
-      this.mcpClient!.callTool(name, input);
-
-    const raw = await runAgentLoop(
-      this.anthropic,
-      SYSTEM_PROMPT,
-      `Get historical prices for ${symbol.toUpperCase()} for the period "${period}" with interval "${interval}".`,
-      tools,
-      toolExecutor,
-      { maxTokens: 4096, maxIterations: 5 }
-    );
-
-    return this.parseHistoricalData(raw, symbol);
-  }
-
-  private parseHistoricalData(raw: string, symbol: string): HistoricalDataPoint[] {
-    try {
-      const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      const parsed = JSON.parse(cleaned);
-      if (!Array.isArray(parsed)) throw new Error('Expected array');
-      return parsed as HistoricalDataPoint[];
-    } catch {
-      console.error(`[HistoricalAgent] Failed to parse historical data for ${symbol}:`, raw.slice(0, 200));
-      return [];
-    }
-  }
-
-  async close(): Promise<void> {
-    await this.mcpClient?.close();
-  }
+  async close(): Promise<void> {}
 }

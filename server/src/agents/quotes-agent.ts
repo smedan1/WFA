@@ -1,79 +1,46 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { MCPClient, runAgentLoop } from '../services/mcp-manager.js';
-import { MCP_CONFIGS } from '../config/mcp.js';
 import type { StockQuote } from '../types/index.js';
 
-const SYSTEM_PROMPT = `You are QuotesAgent. Your only job is to fetch real-time stock quotes using the
-get_stock_quote tool and return the result as valid JSON matching this exact structure:
-{
-  "symbol": "TICKER",
-  "price": 123.45,
-  "change": 1.23,
-  "changePercent": 1.01,
-  "volume": 1000000,
-  "marketCap": 1000000000,
-  "dayHigh": 125.00,
-  "dayLow": 121.00,
-  "fiftyTwoWeekHigh": 200.00,
-  "fiftyTwoWeekLow": 80.00,
-  "timestamp": "2024-01-01T00:00:00Z"
-}
-Return ONLY valid JSON — no markdown fences, no prose. Use null for any unavailable fields.`;
+const YF_BASE = 'https://query1.finance.yahoo.com';
+const HEADERS = {
+  'User-Agent': 'Mozilla/5.0 (compatible; WFA-App/1.0)',
+  'Accept': 'application/json',
+};
 
 export class QuotesAgent {
-  private anthropic: Anthropic;
-  private mcpClient: MCPClient | null = null;
+  constructor(_anthropic: Anthropic) {}
 
-  constructor(anthropic: Anthropic) {
-    this.anthropic = anthropic;
-  }
-
-  async initialize(): Promise<void> {
-    this.mcpClient = new MCPClient('quotes-yahoo');
-    await this.mcpClient.connectStdio(MCP_CONFIGS.yahooFinance);
-  }
+  async initialize(): Promise<void> {}
 
   async getQuote(symbol: string): Promise<StockQuote> {
-    if (!this.mcpClient) throw new Error('QuotesAgent not initialized');
+    const url = `${YF_BASE}/v8/finance/chart/${symbol}?interval=1d&range=1d&includePrePost=false`;
+    const res = await fetch(url, { headers: HEADERS });
+    if (!res.ok) throw new Error(`Yahoo Finance returned ${res.status} for ${symbol}`);
 
-    const tools = await this.mcpClient.listTools();
-    const toolExecutor = (name: string, input: Record<string, unknown>) =>
-      this.mcpClient!.callTool(name, input);
+    const json = await res.json() as { chart?: { result?: { meta: Record<string, number | string> }[] } };
+    const meta = json.chart?.result?.[0]?.meta;
+    if (!meta) throw new Error(`No data returned for ${symbol}`);
 
-    const raw = await runAgentLoop(
-      this.anthropic,
-      SYSTEM_PROMPT,
-      `Get the real-time quote for stock symbol: ${symbol.toUpperCase()}`,
-      tools,
-      toolExecutor,
-      { maxTokens: 1024, maxIterations: 5 }
-    );
+    const ts = typeof meta.regularMarketTime === 'number' ? meta.regularMarketTime : Date.now() / 1000;
 
-    return this.parseQuote(raw, symbol);
+    return {
+      symbol: String(meta.symbol ?? symbol),
+      price: Number(meta.regularMarketPrice ?? 0),
+      change: Number(meta.regularMarketChange ?? 0),
+      changePercent: Number(meta.regularMarketChangePercent ?? 0),
+      volume: Number(meta.regularMarketVolume ?? 0),
+      marketCap: meta.marketCap != null ? Number(meta.marketCap) : undefined,
+      dayHigh: meta.regularMarketDayHigh != null ? Number(meta.regularMarketDayHigh) : undefined,
+      dayLow: meta.regularMarketDayLow != null ? Number(meta.regularMarketDayLow) : undefined,
+      fiftyTwoWeekHigh: meta.fiftyTwoWeekHigh != null ? Number(meta.fiftyTwoWeekHigh) : undefined,
+      fiftyTwoWeekLow: meta.fiftyTwoWeekLow != null ? Number(meta.fiftyTwoWeekLow) : undefined,
+      timestamp: new Date(ts * 1000).toISOString(),
+    };
   }
 
   async getQuotes(symbols: string[]): Promise<StockQuote[]> {
     return Promise.all(symbols.map((s) => this.getQuote(s)));
   }
 
-  private parseQuote(raw: string, symbol: string): StockQuote {
-    try {
-      const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      return JSON.parse(cleaned) as StockQuote;
-    } catch {
-      console.error(`[QuotesAgent] Failed to parse quote for ${symbol}:`, raw.slice(0, 200));
-      return {
-        symbol: symbol.toUpperCase(),
-        price: 0,
-        change: 0,
-        changePercent: 0,
-        volume: 0,
-        timestamp: new Date().toISOString(),
-      };
-    }
-  }
-
-  async close(): Promise<void> {
-    await this.mcpClient?.close();
-  }
+  async close(): Promise<void> {}
 }

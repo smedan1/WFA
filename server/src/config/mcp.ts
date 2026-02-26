@@ -19,16 +19,5 @@ export const MCP_CONFIGS = {
     url: 'https://api.githubcopilot.com/mcp/',
     authorizationToken: process.env.GITHUB_TOKEN,
   },
-  yahooFinance: {
-    type: 'stdio' as const,
-    command: 'npx',
-    args: ['-y', 'mcp-yahoo-finance'],
-    env: {},
-  },
-  stockMarket: {
-    type: 'stdio' as const,
-    command: 'npx',
-    args: ['-y', 'mcp-stock-market'],
-    env: {},
-  },
+
 } as const;
