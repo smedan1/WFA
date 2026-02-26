@@ -4,17 +4,17 @@
 
 ## What is this?
 
-WFA is a web application that monitors r/wallstreetbets to surface the most hyped meme stocks, then uses AI agents to analyze, rate, and summarize them — all while firmly reminding you that none of this is financial advice.
+WFA is a web application that monitors r/wallstreetbets to surface the most hyped meme stocks and ETFs, then uses AI agents to analyze, rate, and summarize them — all while firmly reminding you that none of this is financial advice.
 
 ## Agents
 
-| Agent | MCP Server | Responsibility |
+| Agent | Data Source | Responsibility |
 |---|---|---|
-| **WallstreetAgent** | `vinod827/mcp-server-reddit` | Scrapes r/wallstreetbets, scores popularity, picks top 5 buy & sell |
-| **GithubAgent** | `https://api.githubcopilot.com/mcp/` | Reads/stores recommendation history in this repo |
-| **QuotesAgent** | Yahoo Finance (`get_stock_quote`) | Fetches real-time stock prices |
-| **HistoricalAgent** | Yahoo Finance (`get_historical_prices`) | Fetches historical price data for charts |
-| **BasicFinancialsAgent** | Stock Market (`get_basic_financials`) | Fetches fundamentals for manual stock lookup |
+| **WallstreetAgent** | Reddit public JSON API (no credentials needed) | Scrapes r/wallstreetbets, scores popularity, picks up to 5 buy & sell (stocks + ETFs) |
+| **GithubAgent** | GitHub MCP API | Reads/stores recommendation history in this repo |
+| **QuotesAgent** | Yahoo Finance v8 API (public) | Fetches real-time prices |
+| **HistoricalAgent** | Yahoo Finance v8 API (public) | Fetches historical price data for charts |
+| **BasicFinancialsAgent** | Yahoo Finance v10 API (cookie+crumb auth, automatic) | Fetches fundamentals and ETF data for manual lookup |
 
 ## Setup
 
@@ -22,7 +22,6 @@ WFA is a web application that monitors r/wallstreetbets to surface the most hype
 
 - Node.js >= 18
 - npm >= 9
-- API Keys (see below)
 
 ### Environment Variables
 
@@ -34,25 +33,13 @@ cp .env.example server/.env
 
 **Required:**
 - `ANTHROPIC_API_KEY` — Get at https://console.anthropic.com
-- `REDDIT_CLIENT_ID` + `REDDIT_CLIENT_SECRET` — Get at https://www.reddit.com/prefs/apps (create a "script" app)
-- `GITHUB_TOKEN` — Get at https://github.com/settings/tokens (needs `repo` scope)
 
-### MCP Servers
+**Optional:**
+- `GITHUB_TOKEN` — Get at https://github.com/settings/tokens (needs `repo` scope) — only needed for the GithubAgent feature
+- `GITHUB_REPO_OWNER` / `GITHUB_REPO_NAME` — your repo details for GithubAgent
 
-The app uses the following MCP servers. Install them globally or they will be fetched via `npx`:
-
-```bash
-# Reddit MCP
-npx -y @vinod827/mcp-server-reddit
-
-# Yahoo Finance MCP (provides get_stock_quote, get_historical_prices)
-npx -y mcp-yahoo-finance
-
-# Stock Market MCP (provides get_basic_financials)
-npx -y mcp-stock-market
-```
-
-> **Note**: If the exact npm package names differ, update `server/src/config/mcp.ts` accordingly.
+> No Reddit credentials are required. The app uses Reddit's public JSON API (`reddit.com/r/wallstreetbets/*.json`).
+> Yahoo Finance authentication (cookie + crumb) is handled automatically by the server at startup.
 
 ### Install & Run
 
@@ -68,5 +55,5 @@ npm run dev
 
 ```
 client/          React + TypeScript + Vite + Tailwind + Recharts
-server/          Express + TypeScript + Anthropic SDK + MCP clients
+server/          Express + TypeScript + Anthropic SDK
 ```
