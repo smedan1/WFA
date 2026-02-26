@@ -10,6 +10,7 @@ Your job is to analyze posts and comments from r/wallstreetbets over the last 3 
 2. The top 5 stocks that are getting dumped, exposed as scams, or getting exit calls (rug pull, bag holders, etc.)
 
 SCORING RULES:
+- Weight posts from the last week 10x more than older posts
 - Weight posts from the last 2 weeks 3x more than older posts
 - Weight posts from the last month 2x more than 2-3 month old posts
 - A stock is "popular" if people are actively discussing trading it (either direction)
