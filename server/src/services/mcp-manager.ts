@@ -19,7 +19,7 @@ export class MCPClient {
   async connectStdio(config: StdioMCPConfig): Promise<void> {
     const transport = new StdioClientTransport({
       command: config.command,
-      args: config.args,
+      args: [...config.args],
       env: config.env ? { ...process.env, ...config.env } as Record<string, string> : undefined,
     });
     await this.client.connect(transport);
