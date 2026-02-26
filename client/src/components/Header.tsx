@@ -15,7 +15,7 @@ export function Header({ lastUpdated, onRefresh, isLoading }: Props) {
               WFA
             </h1>
             <p className="text-xs text-gray-500 font-mono truncate">
-              Wallace Financial Advisor — Powered by AI Degeneracy
+              Wallace Financial Advisor — Powered by Artificial Conviction
             </p>
           </div>
         </div>
