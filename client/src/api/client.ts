@@ -1,6 +1,6 @@
 import type { RecommendationsResponse, StockQuote, HistoricalDataPoint, StockAnalysis } from '../types';
 
-const BASE = '/api';
+const BASE = (import.meta.env.VITE_API_URL ?? '') + '/api';
 
 async function fetchJSON<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`);
