@@ -73,7 +73,7 @@ export default function App() {
               <div className="flex items-center gap-3 mb-5">
                 <div className="h-6 w-1 rounded bg-buy" />
                 <h2 className="text-base font-bold font-mono text-white uppercase tracking-wider">
-                  Top {recommendations.buy.length} Meme Stocks to Buy Now
+                  Top {recommendations.buy.length} Meme Stocks & ETFs to Buy Now
                 </h2>
                 <span className="rounded-full bg-buy-bg border border-buy-border px-2.5 py-0.5 text-xs font-bold font-mono text-buy">
                   {recommendations.buy.length}
@@ -103,7 +103,7 @@ export default function App() {
               <div className="flex items-center gap-3 mb-5">
                 <div className="h-6 w-1 rounded bg-sell" />
                 <h2 className="text-base font-bold font-mono text-white uppercase tracking-wider">
-                  Top {recommendations.sell.length} Meme Stocks to Sell NOW
+                  Top {recommendations.sell.length} Meme Stocks & ETFs to Sell NOW
                 </h2>
                 <span className="rounded-full bg-sell-bg border border-sell-border px-2.5 py-0.5 text-xs font-bold font-mono text-sell">
                   {recommendations.sell.length}

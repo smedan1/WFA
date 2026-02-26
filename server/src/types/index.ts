@@ -1,6 +1,7 @@
 export interface StockRecommendation {
   symbol: string;
   companyName: string;
+  instrumentType?: 'STOCK' | 'ETF';
   recommendation: 'BUY' | 'SELL';
   reason: string;
   exitReason?: 'rug pull' | 'pool drain' | 'honeypot' | 'dead cat bounce' | 'pump and dump' | 'liquidity crisis';
@@ -35,6 +36,8 @@ export interface HistoricalDataPoint {
 export interface BasicFinancials {
   symbol: string;
   companyName?: string;
+  instrumentType?: 'STOCK' | 'ETF';
+  // Stock fields
   marketCap?: number;
   peRatio?: number;
   eps?: number;
@@ -46,6 +49,13 @@ export interface BasicFinancials {
   shortFloat?: number;
   dividendYield?: number;
   priceToBook?: number;
+  // ETF fields
+  aum?: number;
+  expenseRatio?: number;
+  category?: string;
+  nav?: number;
+  yield?: number;
+  inceptionDate?: string;
 }
 
 export interface StockAnalysis {

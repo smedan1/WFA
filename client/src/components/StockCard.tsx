@@ -61,13 +61,18 @@ export function StockCard({ stock, rank }: Props) {
         {rank}
       </span>
 
-      {/* Top row: symbol + recommendation badge */}
+      {/* Top row: symbol + badges */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="min-w-0">
-          <div className="flex items-baseline gap-2">
+          <div className="flex items-baseline gap-2 flex-wrap">
             <span className={`text-xl font-bold font-mono ${rankClass}`}>
               {stock.symbol}
             </span>
+            {stock.instrumentType === 'ETF' && (
+              <span className="text-xs text-blue-400/80 font-mono uppercase tracking-wider border border-blue-400/30 rounded px-1 py-0.5">
+                ETF
+              </span>
+            )}
             {stock.exitReason && (
               <span className="text-xs text-red-400/70 font-mono uppercase tracking-wider">
                 [{stock.exitReason}]
@@ -108,12 +113,15 @@ export function StockCard({ stock, rank }: Props) {
         )}
       </div>
 
-      {/* Volume & Market Cap */}
+      {/* Volume & Market Cap / AUM */}
       {quote && (
         <div className="mb-3 flex gap-4 text-xs font-mono text-gray-500">
           <span>Vol: <span className="text-gray-400">{formatVolume(quote.volume)}</span></span>
           {quote.marketCap && (
-            <span>MCap: <span className="text-gray-400">{formatVolume(quote.marketCap)}</span></span>
+            <span>
+              {stock.instrumentType === 'ETF' ? 'AUM' : 'MCap'}:{' '}
+              <span className="text-gray-400">{formatVolume(quote.marketCap)}</span>
+            </span>
           )}
         </div>
       )}
