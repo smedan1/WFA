@@ -1,11 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { BasicFinancials, StockAnalysis } from '../types/index.js';
 
-const YF_BASE = 'https://query1.finance.yahoo.com';
-const HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (compatible; WFA-App/1.0)',
-  'Accept': 'application/json',
-};
+const YF_BASE = 'https://query2.finance.yahoo.com';
+const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 const SYSTEM_PROMPT = `You are BasicFinancialsAgent. Your job is to:
 1. Analyze the fundamental financial data provided for a stock.
@@ -53,17 +50,56 @@ interface YFQuoteSummary {
 
 export class BasicFinancialsAgent {
   private anthropic: Anthropic;
+  private cookie: string | null = null;
+  private crumb: string | null = null;
 
   constructor(anthropic: Anthropic) {
     this.anthropic = anthropic;
   }
 
-  async initialize(): Promise<void> {}
+  async initialize(): Promise<void> {
+    await this.refreshCrumb();
+  }
+
+  private async refreshCrumb(): Promise<void> {
+    // Step 1: hit fc.yahoo.com to get the A3 session cookie
+    const cookieRes = await fetch('https://fc.yahoo.com', {
+      headers: { 'User-Agent': BROWSER_UA },
+    });
+    const setCookieHeader = cookieRes.headers.get('set-cookie') ?? '';
+    const a3Match = setCookieHeader.match(/A3=([^;]+)/);
+    if (!a3Match) throw new Error('Could not obtain Yahoo Finance session cookie');
+    this.cookie = `A3=${a3Match[1]}`;
+
+    // Step 2: get the crumb using that cookie
+    const crumbRes = await fetch(`${YF_BASE}/v1/test/getcrumb`, {
+      headers: { 'User-Agent': BROWSER_UA, 'Cookie': this.cookie },
+    });
+    if (!crumbRes.ok) throw new Error(`Crumb fetch failed: ${crumbRes.status}`);
+    this.crumb = await crumbRes.text();
+    console.log('[BasicFinancialsAgent] Crumb refreshed');
+  }
 
   private async fetchFinancials(symbol: string): Promise<BasicFinancials> {
+    if (!this.crumb || !this.cookie) await this.refreshCrumb();
+
     const modules = 'defaultKeyStatistics,financialData,summaryDetail,price';
-    const url = `${YF_BASE}/v10/finance/quoteSummary/${symbol}?modules=${modules}`;
-    const res = await fetch(url, { headers: HEADERS });
+    const url = `${YF_BASE}/v10/finance/quoteSummary/${symbol}?modules=${modules}&crumb=${encodeURIComponent(this.crumb!)}`;
+
+    let res = await fetch(url, {
+      headers: { 'User-Agent': BROWSER_UA, 'Cookie': this.cookie!, 'Accept': 'application/json' },
+    });
+
+    // On 401, refresh crumb once and retry
+    if (res.status === 401) {
+      console.log('[BasicFinancialsAgent] 401 — refreshing crumb and retrying');
+      await this.refreshCrumb();
+      const retryUrl = `${YF_BASE}/v10/finance/quoteSummary/${symbol}?modules=${modules}&crumb=${encodeURIComponent(this.crumb!)}`;
+      res = await fetch(retryUrl, {
+        headers: { 'User-Agent': BROWSER_UA, 'Cookie': this.cookie!, 'Accept': 'application/json' },
+      });
+    }
+
     if (!res.ok) throw new Error(`Yahoo Finance returned ${res.status} for ${symbol}`);
 
     const json = await res.json() as YFQuoteSummary;
