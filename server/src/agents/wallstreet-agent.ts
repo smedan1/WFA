@@ -1,7 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { MCPClient, runAgentLoop } from '../services/mcp-manager.js';
-import { MCP_CONFIGS } from '../config/mcp.js';
 import type { StockRecommendation } from '../types/index.js';
+
+const USER_AGENT = 'WFA-App/1.0';
+const SUBREDDIT = 'wallstreetbets';
 
 const SYSTEM_PROMPT = `You are WallstreetAgent, an AI that lives and breathes r/wallstreetbets.
 Your job is to analyze posts and comments from r/wallstreetbets over the last 3 months to identify:
@@ -47,58 +48,81 @@ interface WallstreetRecommendations {
   sell: StockRecommendation[];
 }
 
+interface RedditPost {
+  title: string;
+  score: number;
+  num_comments: number;
+  created_utc: number;
+}
+
+async function fetchPosts(path: string): Promise<RedditPost[]> {
+  try {
+    const res = await fetch(`https://www.reddit.com/r/${SUBREDDIT}/${path}`, {
+      headers: { 'User-Agent': USER_AGENT },
+    });
+    if (!res.ok) return [];
+    const json = await res.json() as { data?: { children?: { data: RedditPost }[] } };
+    return (json.data?.children ?? []).map((c) => c.data);
+  } catch {
+    return [];
+  }
+}
+
 export class WallstreetAgent {
   private anthropic: Anthropic;
-  private mcpClient: MCPClient | null = null;
 
   constructor(anthropic: Anthropic) {
     this.anthropic = anthropic;
   }
 
   async initialize(): Promise<void> {
-    this.mcpClient = new MCPClient('wallstreet-reddit');
-    await this.mcpClient.connectStdio(MCP_CONFIGS.reddit);
+    // No initialization needed — uses public Reddit JSON API
   }
 
   async getRecommendations(): Promise<WallstreetRecommendations> {
-    if (!this.mcpClient) throw new Error('WallstreetAgent not initialized');
+    const [hot, topWeek, topMonth] = await Promise.all([
+      fetchPosts('hot.json?limit=100'),
+      fetchPosts('top.json?t=week&limit=100'),
+      fetchPosts('top.json?t=month&limit=100'),
+    ]);
 
-    const tools = await this.mcpClient.listTools();
-    const toolExecutor = (name: string, input: Record<string, unknown>) =>
-      this.mcpClient!.callTool(name, input);
+    // Deduplicate by title
+    const seen = new Set<string>();
+    const posts: RedditPost[] = [];
+    for (const post of [...hot, ...topWeek, ...topMonth]) {
+      if (!seen.has(post.title)) {
+        seen.add(post.title);
+        posts.push(post);
+      }
+    }
 
-    const now = new Date();
-    const threeMonthsAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    const nowSec = Date.now() / 1000;
+    const postSummary = posts
+      .map((p) => {
+        const daysAgo = Math.floor((nowSec - p.created_utc) / 86400);
+        return `[${daysAgo}d ago, score:${p.score}, comments:${p.num_comments}] ${p.title}`;
+      })
+      .join('\n');
 
-    const userMessage = `
-Search r/wallstreetbets for the most discussed stocks between ${threeMonthsAgo.toISOString().split('T')[0]} and ${now.toISOString().split('T')[0]}.
+    const userMessage = `Here are recent r/wallstreetbets posts:\n\n${postSummary}\n\nAnalyze these posts and return your JSON recommendations.`;
 
-Search for:
-1. Hot/trending posts with stock tickers (look for ticker symbols in CAPS)
-2. DD (Due Diligence) posts
-3. YOLO posts
-4. Loss porn posts (these indicate sells)
-5. Recent pump discussions
+    const response = await this.anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 4096,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: userMessage }],
+    });
 
-Use the available Reddit tools to search for relevant posts and comments.
-Collect data, tally mentions with recency weighting, then produce your final JSON recommendation.
-    `.trim();
-
-    const raw = await runAgentLoop(
-      this.anthropic,
-      SYSTEM_PROMPT,
-      userMessage,
-      tools,
-      toolExecutor,
-      { maxTokens: 8096, maxIterations: 15 }
-    );
+    const raw = response.content
+      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+      .map((b) => b.text)
+      .join('');
 
     return this.parseRecommendations(raw);
   }
 
   private parseRecommendations(raw: string): WallstreetRecommendations {
     try {
-      // Strip any accidental markdown fences
       const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
       const parsed = JSON.parse(cleaned) as WallstreetRecommendations;
       return {
@@ -118,6 +142,6 @@ Collect data, tally mentions with recency weighting, then produce your final JSO
   }
 
   async close(): Promise<void> {
-    await this.mcpClient?.close();
+    // Nothing to close
   }
 }
