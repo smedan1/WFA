@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import type { Request, Response, ParamsDictionary } from 'express';
+import type { Request, Response } from 'express';
 import NodeCache from 'node-cache';
 import { getAgents } from '../agents/registry.js';
 
@@ -10,7 +10,7 @@ const quoteCache = new NodeCache({ stdTTL: 15 });
 const histCache = new NodeCache({ stdTTL: 3600 });
 const analysisCache = new NodeCache({ stdTTL: 300 });
 
-stocksRouter.get('/quote/:symbol', async (req: Request<ParamsDictionary & { symbol: string }>, res: Response) => {
+stocksRouter.get('/quote/:symbol', async (req: Request<{ symbol: string }>, res: Response) => {
   const { symbol } = req.params;
   const key = symbol.toUpperCase();
 
@@ -27,7 +27,7 @@ stocksRouter.get('/quote/:symbol', async (req: Request<ParamsDictionary & { symb
   }
 });
 
-stocksRouter.get('/historical/:symbol', async (req: Request<ParamsDictionary & { symbol: string }>, res: Response) => {
+stocksRouter.get('/historical/:symbol', async (req: Request<{ symbol: string }>, res: Response) => {
   const { symbol } = req.params;
   const { period = '3mo', interval = '1d' } = req.query as Record<string, string>;
   const key = `${symbol.toUpperCase()}:${period}:${interval}`;
@@ -45,7 +45,7 @@ stocksRouter.get('/historical/:symbol', async (req: Request<ParamsDictionary & {
   }
 });
 
-stocksRouter.get('/analyze/:symbol', async (req: Request<ParamsDictionary & { symbol: string }>, res: Response) => {
+stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, res: Response) => {
   const { symbol } = req.params;
   const key = symbol.toUpperCase();
 
