@@ -16,9 +16,9 @@ export function WarningModal({ onAccept }: Props) {
             Important Disclaimer
           </div>
           <h1 className="text-2xl font-bold text-white font-mono">
-            NMSE-APP
+            WFA
           </h1>
-          <p className="mt-1 text-sm text-gray-400 font-mono">Not MEME Stocks Advice</p>
+          <p className="mt-1 text-sm text-gray-400 font-mono">Wallace Financial Advisor</p>
         </div>
 
         {/* Warning content */}

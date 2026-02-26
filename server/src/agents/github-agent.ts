@@ -3,7 +3,7 @@ import { runAgentLoopWithUrlMCP } from '../services/mcp-manager.js';
 import { MCP_CONFIGS } from '../config/mcp.js';
 import type { StockRecommendation } from '../types/index.js';
 
-const SYSTEM_PROMPT = `You are GithubAgent, responsible for reading and writing NMSA recommendation history
+const SYSTEM_PROMPT = `You are GithubAgent, responsible for reading and writing WFA recommendation history
 to the GitHub repository. You store recommendations as JSON files and can retrieve past snapshots.
 When writing, commit the file with a descriptive message. When reading, return the parsed JSON content.
 Always respond with valid JSON only — no markdown fences, no prose.`;
@@ -34,7 +34,7 @@ export class GithubAgent {
 
     const userMessage = `
 Save the following JSON to the file "${filePath}" in the repository "${this.repoOwner}/${this.repoName}".
-If the file already exists, overwrite it. Commit message: "chore: save NMSA recommendations for ${recommendations.timestamp.split('T')[0]}".
+If the file already exists, overwrite it. Commit message: "chore: save WFA recommendations for ${recommendations.timestamp.split('T')[0]}".
 
 Content to save:
 ${content}

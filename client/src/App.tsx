@@ -7,7 +7,7 @@ import { LoadingState, CardSkeleton, ErrorState } from './components/LoadingStat
 import { api } from './api/client';
 import type { RecommendationsResponse } from './types';
 
-const WARNING_KEY = 'nmsa_warning_accepted';
+const WARNING_KEY = 'wfa_warning_accepted';
 
 export default function App() {
   const [warningAccepted, setWarningAccepted] = useState(
@@ -131,7 +131,7 @@ export default function App() {
         {/* Footer */}
         <footer className="border-t border-gray-800 pt-6 text-center space-y-1">
           <p className="text-xs text-gray-600 font-mono">
-            NMSE-APP — Not MEME Stocks Advice
+            WFA — Wallace Financial Advisor
           </p>
           <p className="text-xs text-red-900/60 font-mono">
             This app provides zero financial advice. Don't do it. Seriously.

@@ -23,8 +23,8 @@ let initPromise: Promise<Agents> | null = null;
 async function initializeAgents(): Promise<Agents> {
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-  const repoOwner = process.env.GITHUB_REPO_OWNER ?? 'nmsa';
-  const repoName = process.env.GITHUB_REPO_NAME ?? 'NMSA';
+  const repoOwner = process.env.GITHUB_REPO_OWNER ?? 'wfa';
+  const repoName = process.env.GITHUB_REPO_NAME ?? 'WFA';
 
   const wallstreet = new WallstreetAgent(anthropic);
   const github = new GithubAgent(anthropic, repoOwner, repoName);

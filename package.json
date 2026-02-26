@@ -1,7 +1,7 @@
 {
-  "name": "nmsa",
+  "name": "wfa",
   "version": "1.0.0",
-  "description": "Not MEME Stocks Advice - NMSE Application",
+  "description": "Wallace Financial Advisor - WFA Application",
   "private": true,
   "workspaces": [
     "client",

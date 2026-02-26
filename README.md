@@ -1,10 +1,10 @@
-# NMSA — Not MEME Stocks Advice
+# WFA — Wallace Financial Advisor
 
 > **DISCLAIMER**: This app provides absolutely terrible financial advice. Do NOT buy or sell anything based on what this app says. Seriously.
 
 ## What is this?
 
-NMSE-APP is a web application that monitors r/wallstreetbets to surface the most hyped meme stocks, then uses AI agents to analyze, rate, and summarize them — all while firmly reminding you that none of this is financial advice.
+WFA is a web application that monitors r/wallstreetbets to surface the most hyped meme stocks, then uses AI agents to analyze, rate, and summarize them — all while firmly reminding you that none of this is financial advice.
 
 ## Agents
 

@@ -26,7 +26,7 @@ app.use('/api/recommendations', recommendationsRouter);
 app.use('/api/stocks', stocksRouter);
 
 const server = app.listen(PORT, () => {
-  console.log(`NMSA Server running on http://localhost:${PORT}`);
+  console.log(`WFA Server running on http://localhost:${PORT}`);
 });
 
 // Graceful shutdown

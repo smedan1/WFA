@@ -12,10 +12,10 @@ export function Header({ lastUpdated, onRefresh, isLoading }: Props) {
           <div className="hidden sm:block h-8 w-1 rounded bg-yellow-500" />
           <div className="min-w-0">
             <h1 className="text-lg font-bold font-mono text-white leading-none truncate">
-              NMSE-APP
+              WFA
             </h1>
             <p className="text-xs text-gray-500 font-mono truncate">
-              Not MEME Stocks Advice — Powered by AI Degeneracy
+              Wallace Financial Advisor — Powered by AI Degeneracy
             </p>
           </div>
         </div>

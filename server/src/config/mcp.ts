@@ -21,7 +21,7 @@ export const MCP_CONFIGS = {
     env: {
       REDDIT_CLIENT_ID: process.env.REDDIT_CLIENT_ID ?? '',
       REDDIT_CLIENT_SECRET: process.env.REDDIT_CLIENT_SECRET ?? '',
-      REDDIT_USER_AGENT: process.env.REDDIT_USER_AGENT ?? 'NMSA-App/1.0',
+      REDDIT_USER_AGENT: process.env.REDDIT_USER_AGENT ?? 'WFA-App/1.0',
     },
   },
   github: {
