@@ -1,59 +1,107 @@
 # WFA — Wallace Financial Advisor
 
-> **DISCLAIMER**: This app provides absolutely terrible financial advice. Do NOT buy or sell anything based on what this app says. Seriously.
+> **Powered by Artificial Conviction**
+>
+> **DISCLAIMER**: This app provides absolutely terrible financial advice powered by r/wallstreetbets sentiment and AI hallucination. Do NOT buy or sell anything based on what this app says. Seriously.
 
 ## What is this?
 
-WFA is a web application that monitors r/wallstreetbets to surface the most hyped meme stocks and ETFs, then uses AI agents to analyze, rate, and summarize them — all while firmly reminding you that none of this is financial advice.
+WFA monitors r/wallstreetbets via the [Xpoz](https://xpoz.ai) aggregator, uses Claude AI to identify the most hyped buy and sell picks, enriches them with real-time financial data, and presents them in a dark-themed web UI.
 
 ## Agents
 
 | Agent | Data Source | Responsibility |
 |---|---|---|
-| **WallstreetAgent** | Reddit public JSON API (no credentials needed) | Scrapes r/wallstreetbets, scores popularity, picks up to 5 buy & sell (stocks + ETFs) |
-| **GithubAgent** | GitHub MCP API | Reads/stores recommendation history in this repo |
-| **QuotesAgent** | Yahoo Finance v8 API (public) | Fetches real-time prices |
-| **HistoricalAgent** | Yahoo Finance v8 API (public) | Fetches historical price data for charts |
-| **BasicFinancialsAgent** | Yahoo Finance v10 API (cookie+crumb auth, automatic) | Fetches fundamentals and ETF data for manual lookup |
+| **WallstreetAgent** | Xpoz MCP aggregator (`XPOZ_TOKEN`) | Fetches r/wallstreetbets posts, picks up to 5 BUY & 5 SELL instruments with reasons |
+| **GithubAgent** | GitHub REST API (`GITHUB_TOKEN`) | Saves/reads recommendation history and stock analysis cache in this repo |
+| **QuotesAgent** | Yahoo Finance v8 (public) | Real-time prices |
+| **HistoricalAgent** | Yahoo Finance v8 (public) | Historical OHLCV data for charts |
+| **BasicFinancialsAgent** | Yahoo Finance v10 (auto cookie+crumb auth) | Fundamentals and ETF data for manual stock lookup |
 
 ## Setup
 
 ### Prerequisites
 
 - Node.js >= 18
-- npm >= 9
 
 ### Environment Variables
 
-Copy `.env.example` to `.env` in the `server/` directory and fill in:
+Copy `.env.example` to `.env` in the **repo root** (not `server/`) and fill in:
 
 ```bash
-cp .env.example server/.env
+cp .env.example .env
 ```
 
-**Required:**
-- `ANTHROPIC_API_KEY` — Get at https://console.anthropic.com
-
-**Optional:**
-- `GITHUB_TOKEN` — Get at https://github.com/settings/tokens (needs `repo` scope) — only needed for the GithubAgent feature
-- `GITHUB_REPO_OWNER` / `GITHUB_REPO_NAME` — your repo details for GithubAgent
-
-> No Reddit credentials are required. The app uses Reddit's public JSON API (`reddit.com/r/wallstreetbets/*.json`).
-> Yahoo Finance authentication (cookie + crumb) is handled automatically by the server at startup.
+| Variable | Required | Description |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Yes | Get at https://console.anthropic.com |
+| `XPOZ_TOKEN` | Recommended | Bearer token from https://xpoz.ai — enables live Reddit data. Without it, app falls back to GitHub history. |
+| `GITHUB_TOKEN` | Optional | PAT with `repo` scope — enables history saving and stock analysis cache |
+| `GITHUB_REPO_OWNER` | Optional | Your GitHub username (e.g. `smedan1`) |
+| `GITHUB_REPO_NAME` | Optional | Repo name (e.g. `WFA`) |
+| `CORS_ORIGIN` | Production | Comma-separated allowed origins — defaults to `http://localhost:5173` |
 
 ### Install & Run
 
 ```bash
-npm install
-npm run dev
+# Server
+cd server && npm install && npm run dev
+
+# Client (separate terminal)
+cd client && npm install && npm run dev
 ```
 
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:3001
+- Client: http://localhost:5173
+- Server API: http://localhost:3001
 
 ## Architecture
 
 ```
-client/          React + TypeScript + Vite + Tailwind + Recharts
-server/          Express + TypeScript + Anthropic SDK
+client/    React 18 + TypeScript + Vite + Tailwind CSS
+server/    Express + TypeScript (ESM) + Anthropic SDK
+data/
+  recommendations/   YYYY-MM-DD-HH.json   hourly WSB pick snapshots
+  stock-analysis/    YYYY-MM-DD-HH_*.json  manual analysis cache (30-min TTL)
+  easter-eggs/       adsk.json             ADSK Easter egg (30-min TTL)
 ```
+
+## AI Cost Analysis
+
+**Model**: `claude-sonnet-4-6` — **$3.00 / MTok input · $15.00 / MTok output**
+
+> This section must be kept up to date as AI usage in the app changes.
+
+### Per-operation costs
+
+#### Full recommendations refresh (`POST /api/recommendations/refresh`)
+
+One Claude call in `WallstreetAgent`. Xpoz returns up to 300 posts per call × 3 calls; after deduplication roughly 300–500 unique posts reach Claude.
+
+| Component | Tokens | Cost |
+|---|---|---|
+| System prompt + JSON schema | ~850 | — |
+| Post lines (~400 × 25 tok/line) | ~10,000 | — |
+| **Total input** | **~10,850** | **~$0.033** |
+| JSON output (10 picks + reasons) | ~700 | **~$0.011** |
+| **Total per refresh** | | **~$0.04** |
+
+#### Manual stock analysis (`GET /api/stocks/analyze/:symbol`)
+
+One Claude call in `BasicFinancialsAgent` (skipped on cache hit — in-memory 5 min, GitHub 30 min).
+
+| Component | Tokens | Cost |
+|---|---|---|
+| System prompt + financials data | ~600 | — |
+| **Total input** | **~600** | **~$0.002** |
+| JSON output (recommendation + reason) | ~200 | **~$0.003** |
+| **Total per analysis** | | **~$0.005** |
+
+### At scale
+
+| Scenario | Refreshes/day | Analyses/day | Est. monthly |
+|---|---|---|---|
+| Light (personal use) | 1 | 2 | ~$1.50 |
+| Moderate | 5 | 10 | ~$7.50 |
+| Maximum (refresh every 60 min) | 24 | — | ~$30 |
+
+The **60-minute recommendation cache** is the natural cost governor — no matter how many concurrent clients hit the server, Claude is called at most 24 times/day for recommendations. The **30-minute GitHub cache** for stock analyses means repeated lookups of the same symbol (across any client or server restart) burn zero AI tokens.

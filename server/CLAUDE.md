@@ -2,6 +2,9 @@
 
 Express + TypeScript API server. Entry point: `src/index.ts`. Built with `tsc` to `dist/`. Runs as ESM (`"type": "module"`).
 
+## AI cost maintenance rule
+The **AI Cost Analysis** section in `README.md` must be kept up to date whenever AI usage changes — new Claude calls added, model changed, prompt size significantly altered, or cache TTLs that affect call frequency changed. Update the per-operation token estimates and the at-scale table accordingly.
+
 ## Agent architecture
 Agents are lazy-initialized singletons via `src/agents/registry.ts`. All agents are initialized once on first request and reused.
 
