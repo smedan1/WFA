@@ -93,6 +93,8 @@ export class WallstreetAgent {
       fetchPosts('top.json?t=month&limit=100'),
     ]);
 
+    console.log(`[WallstreetAgent] Reddit fetch: hot=${hot.length} topWeek=${topWeek.length} topMonth=${topMonth.length}`);
+
     // Deduplicate by title
     const seen = new Set<string>();
     const posts: RedditPost[] = [];
@@ -102,6 +104,8 @@ export class WallstreetAgent {
         posts.push(post);
       }
     }
+
+    console.log(`[WallstreetAgent] Unique posts after dedup: ${posts.length}`);
 
     const nowSec = Date.now() / 1000;
     const postSummary = posts
@@ -124,6 +128,8 @@ export class WallstreetAgent {
       .filter((b): b is Anthropic.TextBlock => b.type === 'text')
       .map((b) => b.text)
       .join('');
+
+    console.log(`[WallstreetAgent] Claude raw response (first 300 chars): ${raw.slice(0, 300)}`);
 
     return this.parseRecommendations(raw);
   }
