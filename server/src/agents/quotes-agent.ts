@@ -23,11 +23,22 @@ export class QuotesAgent {
 
     const ts = typeof meta.regularMarketTime === 'number' ? meta.regularMarketTime : Date.now() / 1000;
 
+    // regularMarketChange/Percent are no longer returned by the v8 chart API;
+    // calculate from price - chartPreviousClose as fallback
+    const price = Number(meta.regularMarketPrice ?? 0);
+    const prevClose = Number(meta.chartPreviousClose ?? price);
+    const change = meta.regularMarketChange != null
+      ? Number(meta.regularMarketChange)
+      : price - prevClose;
+    const changePercent = meta.regularMarketChangePercent != null
+      ? Number(meta.regularMarketChangePercent)
+      : prevClose !== 0 ? ((price - prevClose) / prevClose) * 100 : 0;
+
     return {
       symbol: String(meta.symbol ?? symbol),
-      price: Number(meta.regularMarketPrice ?? 0),
-      change: Number(meta.regularMarketChange ?? 0),
-      changePercent: Number(meta.regularMarketChangePercent ?? 0),
+      price,
+      change,
+      changePercent,
       volume: Number(meta.regularMarketVolume ?? 0),
       marketCap: meta.marketCap != null ? Number(meta.marketCap) : undefined,
       dayHigh: meta.regularMarketDayHigh != null ? Number(meta.regularMarketDayHigh) : undefined,
