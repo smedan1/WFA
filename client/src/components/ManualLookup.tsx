@@ -93,7 +93,7 @@ export function ManualLookup() {
       </p>
 
       {/* Search form */}
-      <form onSubmit={handleSubmit} className="flex gap-3 mb-6">
+      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 mb-6">
         <input
           ref={inputRef}
           type="text"
@@ -101,13 +101,13 @@ export function ManualLookup() {
           onChange={(e) => setSymbol(e.target.value.toUpperCase())}
           placeholder="e.g. GME, AMC, NVDA"
           maxLength={10}
-          className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-4 py-3 text-sm font-mono text-white placeholder-gray-600 focus:border-yellow-500/60 focus:outline-none focus:ring-1 focus:ring-yellow-500/30 uppercase"
+          className="sm:flex-1 rounded-lg border border-gray-700 bg-gray-900 px-4 py-3 text-sm font-mono text-white placeholder-gray-600 focus:border-yellow-500/60 focus:outline-none focus:ring-1 focus:ring-yellow-500/30 uppercase"
           disabled={loading}
         />
         <button
           type="submit"
           disabled={loading || !symbol.trim()}
-          className={`shrink-0 rounded-lg px-6 py-3 text-sm font-bold font-mono uppercase tracking-wider transition-all duration-200 ${
+          className={`rounded-lg px-6 py-3 text-sm font-bold font-mono uppercase tracking-wider transition-all duration-200 ${
             loading || !symbol.trim()
               ? 'cursor-not-allowed bg-gray-800 text-gray-600'
               : 'bg-yellow-500 text-black hover:bg-yellow-400 active:scale-95'
