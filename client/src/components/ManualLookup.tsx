@@ -158,6 +158,11 @@ export function ManualLookup() {
                   </span>
                 </div>
               )}
+              {result.generatedAt && (
+                <span className="text-xs text-gray-600 font-mono mt-0.5 block">
+                  Updated {new Date(result.generatedAt).toLocaleTimeString()}
+                </span>
+              )}
             </div>
 
             <div className={`shrink-0 rounded-xl px-6 py-3 text-center self-start ${isBuy ? 'bg-buy-bg border border-buy-border' : 'bg-sell-bg border border-sell-border'}`}>

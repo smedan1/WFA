@@ -71,7 +71,7 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
         if (saved) {
           const ageMs = Date.now() - new Date(saved.generatedAt).getTime();
           if (ageMs < ADSK_TTL_MS) {
-            adskResult = saved.result;
+            adskResult = { ...saved.result, generatedAt: saved.generatedAt };
             adskResultCache.set('result', adskResult, Math.floor((ADSK_TTL_MS - ageMs) / 1000));
             console.log('[ADSK] Serving cached Easter egg result from GitHub');
           }
@@ -95,6 +95,7 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
         ...(analysis.status === 'fulfilled' ? analysis.value : { symbol: key, recommendation: 'SELL', reason: 'Data unavailable', financials: { symbol: key } }),
         quote: quote.status === 'fulfilled' ? quote.value : null,
         historicalData: hist.status === 'fulfilled' ? hist.value : [],
+        generatedAt: new Date().toISOString(),
       };
 
       const adskReason = await basicFinancials.generateAdskReason(freshResult.financials ?? freshResult);
@@ -115,9 +116,10 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
       const ageMs = Date.now() - new Date(saved.generatedAt).getTime();
       if (ageMs < STOCK_ANALYSIS_TTL_MS) {
         const remaining = Math.floor((STOCK_ANALYSIS_TTL_MS - ageMs) / 1000);
-        analysisCache.set(key, saved.result, Math.min(remaining, 300));
-        console.log(`[stocks] Serving cached analysis for ${key} from GitHub (age: ${Math.floor(ageMs / 3600000)}h)`);
-        return res.json(saved.result);
+        const cachedResult = { ...saved.result, generatedAt: saved.generatedAt };
+        analysisCache.set(key, cachedResult, Math.min(remaining, 300));
+        console.log(`[stocks] Serving cached analysis for ${key} from GitHub (age: ${Math.floor(ageMs / 60000)}min)`);
+        return res.json(cachedResult);
       }
     }
 
@@ -131,6 +133,7 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
       ...(analysis.status === 'fulfilled' ? analysis.value : { symbol: key, recommendation: 'SELL', reason: 'Data unavailable', financials: { symbol: key } }),
       quote: quote.status === 'fulfilled' ? quote.value : null,
       historicalData: hist.status === 'fulfilled' ? hist.value : [],
+      generatedAt: new Date().toISOString(),
     };
 
     analysisCache.set(key, result);
