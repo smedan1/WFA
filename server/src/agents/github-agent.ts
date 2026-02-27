@@ -65,6 +65,40 @@ export class GithubAgent {
     console.log(`[GithubAgent] Saved ${filePath}`);
   }
 
+  async saveAdskReason(reason: string): Promise<void> {
+    if (!this.token) return;
+    const filePath = 'data/easter-eggs/adsk.json';
+    const content = Buffer.from(JSON.stringify({ reason, generatedAt: new Date().toISOString() }, null, 2)).toString('base64');
+    const url = `${GH_API}/repos/${this.repoOwner}/${this.repoName}/contents/${filePath}`;
+
+    let sha: string | undefined;
+    const existing = await fetch(url, { headers: this.headers });
+    if (existing.ok) {
+      const data = await existing.json() as { sha: string };
+      sha = data.sha;
+    }
+
+    const body: Record<string, string> = { message: 'chore: update ADSK Easter egg reason', content };
+    if (sha) body.sha = sha;
+
+    const res = await fetch(url, { method: 'PUT', headers: this.headers, body: JSON.stringify(body) });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`[GithubAgent] Failed to save ADSK reason: ${res.status} ${err}`);
+    }
+    console.log('[GithubAgent] Saved ADSK Easter egg reason');
+  }
+
+  async getAdskReason(): Promise<{ reason: string; generatedAt: string } | null> {
+    if (!this.token) return null;
+    const url = `${GH_API}/repos/${this.repoOwner}/${this.repoName}/contents/data/easter-eggs/adsk.json`;
+    const res = await fetch(url, { headers: this.headers });
+    if (!res.ok) return null;
+    const data = await res.json() as { content: string };
+    const json = JSON.parse(Buffer.from(data.content, 'base64').toString('utf-8')) as { reason: string; generatedAt: string };
+    return json;
+  }
+
   async getRecentHistory(days = 7): Promise<Array<{
     date: string;
     buy: StockRecommendation[];

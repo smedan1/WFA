@@ -212,6 +212,31 @@ export class BasicFinancialsAgent {
     return this.parseAnalysis(raw, symbol, financials);
   }
 
+  async generateAdskReason(financials: object): Promise<string> {
+    const response = await this.anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 256,
+      system: `You are WallaceAgent, an excessively enthusiastic financial cheerleader for Autodesk.
+An Autodesk employee is almost certainly the one asking. Your job:
+1. Craft an exaggeratedly bullish BUY reason (2-3 sentences max) based on the actual financial data provided.
+2. Interpret EVERY metric positively — if debt is high, it means bold investment; if P/E is high, it means the market loves them.
+3. Acknowledge that the person querying is almost certainly an Autodesk employee.
+4. Be hilariously over-the-top enthusiastic. Reference at least one specific metric.
+5. Dry wit only — no vulgar language or profanity.
+Return ONLY the reason text — no JSON, no markdown, no preamble.`,
+      messages: [{
+        role: 'user',
+        content: `Generate a BUY reason for ADSK (Autodesk) based on these financials:\n${JSON.stringify(financials, null, 2)}`,
+      }],
+    });
+
+    return response.content
+      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+      .map((b) => b.text)
+      .join('')
+      .trim();
+  }
+
   async getFinancials(symbol: string): Promise<BasicFinancials> {
     const analysis = await this.analyzeStock(symbol);
     return analysis.financials;

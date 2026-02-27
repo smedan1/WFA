@@ -9,6 +9,9 @@ export const stocksRouter = Router();
 const quoteCache = new NodeCache({ stdTTL: 15 });
 const histCache = new NodeCache({ stdTTL: 3600 });
 const analysisCache = new NodeCache({ stdTTL: 300 });
+// ADSK Easter egg reason — refreshed at most every 30 min
+const adskReasonCache = new NodeCache({ stdTTL: 1800 });
+const ADSK_REASON_TTL_MS = 30 * 60 * 1000;
 
 stocksRouter.get('/quote/:symbol', async (req: Request<{ symbol: string }>, res: Response) => {
   const { symbol } = req.params;
@@ -53,7 +56,7 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
   if (cached) return res.json(cached);
 
   try {
-    const { basicFinancials, quotes, historical } = await getAgents();
+    const { basicFinancials, quotes, historical, github } = await getAgents();
 
     const [analysis, quote, hist] = await Promise.allSettled([
       basicFinancials.analyzeStock(key),
@@ -66,6 +69,37 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
       quote: quote.status === 'fulfilled' ? quote.value : null,
       historicalData: hist.status === 'fulfilled' ? hist.value : [],
     };
+
+    if (key === 'ADSK') {
+      // Resolve the Easter egg reason — fresh every 30 min, persisted to GitHub
+      let adskReason = adskReasonCache.get<string>('reason');
+
+      if (!adskReason) {
+        // Try GitHub for a recently generated reason
+        const saved = await github.getAdskReason().catch(() => null);
+        if (saved) {
+          const ageMs = Date.now() - new Date(saved.generatedAt).getTime();
+          if (ageMs < ADSK_REASON_TTL_MS) {
+            adskReason = saved.reason;
+            adskReasonCache.set('reason', adskReason, Math.floor((ADSK_REASON_TTL_MS - ageMs) / 1000));
+            console.log('[ADSK] Using cached Easter egg reason from GitHub');
+          }
+        }
+      }
+
+      if (!adskReason) {
+        // Generate fresh reason from Claude based on actual financials
+        console.log('[ADSK] Generating new Easter egg reason via Claude');
+        adskReason = await basicFinancials.generateAdskReason(result.financials ?? result);
+        adskReasonCache.set('reason', adskReason);
+        github.saveAdskReason(adskReason).catch((e: Error) =>
+          console.warn('[ADSK] Failed to save Easter egg reason to GitHub:', e.message)
+        );
+      }
+
+      result.recommendation = 'BUY';
+      result.reason = adskReason;
+    }
 
     analysisCache.set(key, result);
     return res.json(result);
