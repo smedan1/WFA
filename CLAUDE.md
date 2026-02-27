@@ -19,7 +19,7 @@ WFA/
 - **Client**: React 18, TypeScript, Vite 6, Tailwind CSS, JetBrains Mono font
 - **Server**: Node 18+, Express, TypeScript (ESM), Anthropic SDK (`claude-sonnet-4-6`)
 - **Deployment**: Railway — two separate services (one per workspace root)
-- **Data sources**: Reddit JSON API, Yahoo Finance v10, GitHub REST API
+- **Data sources**: Xpoz (Reddit aggregator), Yahoo Finance v10, GitHub REST API
 
 ## Deployment (Railway)
 Two Railway services from the same GitHub repo (`smedan1/WFA`):
@@ -43,6 +43,7 @@ Two Railway services from the same GitHub repo (`smedan1/WFA`):
 ### Server (optional)
 | Variable | Description |
 |---|---|
+| `XPOZ_TOKEN` | Bearer token from xpoz.ai — enables live Reddit data via Xpoz aggregator |
 | `GITHUB_TOKEN` | Personal Access Token with repo write access — enables history saving |
 | `GITHUB_REPO_OWNER` | GitHub username (e.g. `smedan1`) |
 | `GITHUB_REPO_NAME` | Repo name (e.g. `WFA`) |
@@ -53,13 +54,13 @@ Two Railway services from the same GitHub repo (`smedan1/WFA`):
 | `VITE_API_URL` | Server public URL. Omit for local dev (Vite proxy handles `/api` → localhost:3001) |
 
 ## Key design decisions
-- **No Reddit OAuth**: Uses the public `.json` Reddit API with a descriptive User-Agent. Fetches from `old.reddit.com` (less aggressive blocking than `www.reddit.com`). User-Agent: `wallace-financial-agent-humour-personal-pet-project:1.1 (by /u/ArenaClowner)`. Fetches are serialized (not parallel), paginated 10 posts at a time (up to 40 per endpoint), with 1s between requests. On 429, waits `max(3s, Retry-After)` and retries up to 3 times.
+- **Xpoz for Reddit data**: Uses Xpoz (`https://mcp.xpoz.ai/mcp`) as the Reddit data source — no QPM limit, no IP bans. Calls `getRedditPostsByKeywords` via raw JSON-RPC over HTTP (no MCP SDK needed). `XPOZ_TOKEN` Bearer token required. 3 serialized calls (hot, top-week, top-month) with 1s spacing.
 - **No MCP for GitHub**: Uses GitHub REST API (Contents API PUT) directly with a PAT. The Copilot MCP endpoint (`api.githubcopilot.com/mcp/`) requires a Copilot token, not a standard PAT.
-- **Reactive server**: No scheduled jobs. Reddit is only fetched when a client requests recommendations.
+- **Reactive server**: No scheduled jobs. Xpoz is only queried when a client requests recommendations.
 - **60-minute cache**: Recommendations are cached in-memory (`node-cache`, `stdTTL: 3600`). GitHub history save is fire-and-forget after cache miss.
-- **In-flight guard**: All concurrent cache-miss GET requests share a single Reddit fetch promise (`fetchInFlight`). POST `/refresh` resets it so forced refreshes always start fresh.
-- **GitHub history fallback**: If Reddit returns 0 posts, the server falls back to the most recent hourly snapshot from `data/recommendations/`. The UI shows an amber banner and "Cached data from YYYY-MM-DD" in the header.
-- **GitHub save guard**: History is only saved when Reddit returns actual picks (not when serving historical fallback data).
+- **In-flight guard**: All concurrent cache-miss GET requests share a single fetch promise (`fetchInFlight`). POST `/refresh` resets it so forced refreshes always start fresh.
+- **GitHub history fallback**: If Xpoz returns 0 posts (or `XPOZ_TOKEN` is unset), the server falls back to the most recent hourly snapshot from `data/recommendations/`. The UI shows an amber banner and "Cached data from YYYY-MM-DD" in the header.
+- **GitHub save guard**: History is only saved when Xpoz returns actual picks (not when serving historical fallback data).
 - **ADSK Easter egg**: When a user manually looks up `ADSK`, the server always returns BUY with a Claude-generated enthusiastic reason based on actual financials. The full result (financials + reason) is cached for 30 minutes in-memory and persisted to `data/easter-eggs/adsk.json` on GitHub for cross-restart persistence.
 
 ## Tone and humor guidelines

@@ -1,8 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { StockRecommendation } from '../types/index.js';
 
-const USER_AGENT = 'wallace-financial-agent-humour-personal-pet-project:1.1 (by /u/ArenaClowner)';
+const XPOZ_URL = 'https://mcp.xpoz.ai/mcp';
 const SUBREDDIT = 'wallstreetbets';
+// Broad WSB-relevant query — space-separated terms are OR'd by Xpoz
+const WSB_QUERY = 'stocks options ETF calls puts yolo moon tendies DD loss gain buy sell';
 
 const SYSTEM_PROMPT = `You are WallstreetAgent, an AI that lives and breathes r/wallstreetbets.
 Your job is to analyze posts and comments from r/wallstreetbets over the last 3 months to identify:
@@ -62,74 +64,142 @@ interface RedditPost {
   created_utc: number;
 }
 
-// 6100ms between requests = ~9.8 QPM, just under Reddit's 10 QPM unauthenticated limit
-const INTER_REQUEST_DELAY_MS = 6100;
+// 1000ms between Xpoz calls — no QPM limit, just polite spacing
+const INTER_REQUEST_DELAY_MS = 1000;
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-async function fetchPage(basePath: string, limit: number, after?: string): Promise<{ posts: RedditPost[]; nextAfter: string | null }> {
-  const sep = basePath.includes('?') ? '&' : '?';
-  let url = `https://old.reddit.com/r/${SUBREDDIT}/${basePath}${sep}limit=${limit}`;
-  if (after) url += `&after=${after}`;
+async function callXpozTool(args: Record<string, unknown>): Promise<string> {
+  const token = process.env.XPOZ_TOKEN;
+  if (!token) throw new Error('XPOZ_TOKEN not set');
 
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const res = await fetch(url, {
-        headers: {
-          'User-Agent': USER_AGENT,
-          'Accept': 'application/json',
-        },
-      });
-      console.log(`[WallstreetAgent] GET ${basePath} after=${after ?? 'start'} → ${res.status}${attempt > 0 ? ` (attempt ${attempt + 1})` : ''}`);
+  const res = await fetch(XPOZ_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json, text/event-stream',
+    },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: { name: 'getRedditPostsByKeywords', arguments: args },
+    }),
+  });
 
-      if (res.status === 429) {
-        const retryAfterHeader = res.headers.get('retry-after');
-        let delayMs = 3000;
-        if (retryAfterHeader) {
-          const seconds = parseInt(retryAfterHeader, 10);
-          if (!isNaN(seconds)) {
-            delayMs = Math.max(3000, seconds * 1000);
-          } else {
-            const retryDate = new Date(retryAfterHeader).getTime();
-            if (!isNaN(retryDate)) {
-              delayMs = Math.max(3000, retryDate - Date.now());
-            }
-          }
-        }
-        console.warn(`[WallstreetAgent] 429 rate-limited — waiting ${delayMs}ms before retry`);
-        await sleep(delayMs);
-        continue;
-      }
-
-      if (!res.ok) {
-        const body = await res.text();
-        console.warn(`[WallstreetAgent] Non-OK response body (first 200): ${body.slice(0, 200)}`);
-        return { posts: [], nextAfter: null };
-      }
-
-      const json = await res.json() as { data?: { children?: { data: RedditPost }[]; after?: string | null } };
-      const posts = (json.data?.children ?? []).map((c) => c.data);
-      return { posts, nextAfter: json.data?.after ?? null };
-    } catch (e) {
-      console.error(`[WallstreetAgent] Fetch error for ${basePath}:`, e);
-      return { posts: [], nextAfter: null };
-    }
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`Xpoz HTTP ${res.status}: ${body.slice(0, 200)}`);
   }
 
-  console.warn(`[WallstreetAgent] Giving up on ${basePath} after=${after ?? 'start'} after 3 attempts`);
-  return { posts: [], nextAfter: null };
+  const body = await res.text();
+  // Response is SSE: find the "data: {...}" line
+  const dataLine = body.split('\n').find((l) => l.startsWith('data: '));
+  if (!dataLine) throw new Error('No SSE data line in Xpoz response');
+
+  const json = JSON.parse(dataLine.slice(6)) as {
+    result?: { content?: Array<{ type: string; text: string }> };
+    error?: { message: string };
+  };
+  if (json.error) throw new Error(`Xpoz tool error: ${json.error.message}`);
+
+  const textContent = json.result?.content?.find((c) => c.type === 'text');
+  if (!textContent) throw new Error('No text content in Xpoz response');
+
+  return textContent.text;
 }
 
-async function fetchPosts(basePath: string): Promise<RedditPost[]> {
-  const all: RedditPost[] = [];
-  let after: string | undefined;
-  while (all.length < 40) {
-    await sleep(INTER_REQUEST_DELAY_MS);
-    const { posts, nextAfter } = await fetchPage(basePath, 10, after);
-    all.push(...posts);
-    if (!nextAfter || posts.length === 0) break;
-    after = nextAfter;
+// Parse a single CSV row, handling quoted fields that may contain commas
+function parseCSVRow(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (const ch of line) {
+    if (ch === '"' && !inQuotes) {
+      inQuotes = true;
+    } else if (ch === '"' && inQuotes) {
+      inQuotes = false;
+    } else if (ch === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
   }
-  return all;
+  result.push(current);
+  return result;
+}
+
+// Parse Xpoz's compact text response into RedditPost[]
+// Format: results[N]{col1,col2,...}:\n    row,...\n  count: N\n  ...
+function parseXpozText(text: string): RedditPost[] {
+  const lines = text.split('\n');
+
+  const headerIdx = lines.findIndex((l) => l.trim().startsWith('results['));
+  if (headerIdx === -1) return [];
+
+  const headerMatch = lines[headerIdx].match(/results\[(\d+)\]\{([^}]+)\}:/);
+  if (!headerMatch) return [];
+
+  const totalCount = parseInt(headerMatch[1], 10);
+  const columns = headerMatch[2].split(',');
+
+  const posts: RedditPost[] = [];
+  let rowsParsed = 0;
+
+  for (let i = headerIdx + 1; i < lines.length && rowsParsed < totalCount; i++) {
+    const line = lines[i];
+    if (!line.startsWith('    ')) continue; // data rows have 4-space indent
+
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    const values = parseCSVRow(trimmed);
+    if (values.length < columns.length) continue;
+
+    const get = (col: string): string => {
+      const idx = columns.indexOf(col);
+      return idx >= 0 ? (values[idx] ?? '') : '';
+    };
+
+    const tsRaw = get('createdAtTimestamp');
+    const created_utc =
+      tsRaw && tsRaw !== 'null'
+        ? Math.floor(new Date(tsRaw).getTime() / 1000)
+        : Math.floor(Date.now() / 1000) - 30 * 86400; // default: 30 days ago
+
+    posts.push({
+      title: get('title'),
+      score: parseInt(get('score'), 10) || 0,
+      num_comments: parseInt(get('commentsCount'), 10) || 0,
+      created_utc,
+    });
+    rowsParsed++;
+  }
+
+  return posts;
+}
+
+async function fetchXpozPosts(sort: string, time?: string): Promise<RedditPost[]> {
+  try {
+    const args: Record<string, unknown> = {
+      query: WSB_QUERY,
+      subreddit: SUBREDDIT,
+      sort,
+      fields: ['title', 'score', 'commentsCount', 'createdAtTimestamp'],
+      responseType: 'fast',
+    };
+    if (time) args.time = time;
+
+    const text = await callXpozTool(args);
+    const posts = parseXpozText(text);
+    console.log(`[WallstreetAgent] Xpoz ${sort}/${time ?? 'all'}: ${posts.length} posts`);
+    return posts;
+  } catch (e) {
+    console.error(`[WallstreetAgent] Xpoz fetch error (${sort}/${time ?? 'all'}):`, e);
+    return [];
+  }
 }
 
 export class WallstreetAgent {
@@ -140,15 +210,17 @@ export class WallstreetAgent {
   }
 
   async initialize(): Promise<void> {
-    // No initialization needed — uses public Reddit JSON API
+    // No initialization needed
   }
 
   async getRecommendations(): Promise<WallstreetRecommendations> {
-    const hot = await fetchPosts('hot.json');
-    const topWeek = await fetchPosts('top.json?t=week');
-    const topMonth = await fetchPosts('top.json?t=month');
+    const hot = await fetchXpozPosts('hot');
+    await sleep(INTER_REQUEST_DELAY_MS);
+    const topWeek = await fetchXpozPosts('top', 'week');
+    await sleep(INTER_REQUEST_DELAY_MS);
+    const topMonth = await fetchXpozPosts('top', 'month');
 
-    console.log(`[WallstreetAgent] Reddit fetch: hot=${hot.length} topWeek=${topWeek.length} topMonth=${topMonth.length}`);
+    console.log(`[WallstreetAgent] Xpoz fetch: hot=${hot.length} topWeek=${topWeek.length} topMonth=${topMonth.length}`);
 
     // Deduplicate by title
     const seen = new Set<string>();

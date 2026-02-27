@@ -6,16 +6,19 @@ Express + TypeScript API server. Entry point: `src/index.ts`. Built with `tsc` t
 Agents are lazy-initialized singletons via `src/agents/registry.ts`. All agents are initialized once on first request and reused.
 
 ### WallstreetAgent (`src/agents/wallstreet-agent.ts`)
-- Fetches posts from `old.reddit.com/r/wallstreetbets` (hot + top week + top month, up to 40 each)
-- Fetches are **serialized** (not parallel), paginated 10 posts at a time via Reddit's `after` cursor, with 1s delay between every request. **Keep fetches lightweight** — Reddit's public JSON API has no OAuth and will ban IPs that look like bots. Do not parallelize, do not remove the delays, do not increase page size beyond 10.
-- On 429: reads `Retry-After` header, waits `max(3s, header value)`, retries up to 3 times
-- User-Agent: `wallace-financial-agent-humour-personal-pet-project:1.1 (by /u/ArenaClowner)`
+- Fetches posts from **Xpoz** (`https://mcp.xpoz.ai/mcp`) — a Reddit data aggregator with no QPM limit
+- Requires `XPOZ_TOKEN` env var (Bearer token from xpoz.ai account)
+- Makes 3 serialized calls with 1000ms spacing: `sort=hot`, `sort=top&time=week`, `sort=top&time=month`
+- Each call uses the `getRedditPostsByKeywords` MCP tool via raw JSON-RPC over HTTP (no MCP SDK dependency)
+- Xpoz returns up to 300 results per call in a compact CSV-like text format; parsed by `parseXpozText`
+- Response field mapping: `title`→`title`, `score`→`score`, `commentsCount`→`num_comments`, `createdAtTimestamp` (ISO string)→`created_utc` (Unix seconds)
 - Deduplicates posts by title, formats with age/score/comments for Claude
 - Sends to `claude-sonnet-4-6` with a structured prompt to identify up to 5 BUY and 5 SELL instruments (stocks or ETFs)
 - WSB community referred to as "the bravely uninformed" in the prompt
 - Weighting: last week = 10x, last 2 weeks = 3x, last month = 2x
 - Returns `{ buy: StockRecommendation[], sell: StockRecommendation[] }`
 - Minimum 5 mentions to qualify; exits labelled as: rug pull, pool drain, honeypot, dead cat bounce, pump and dump, liquidity crisis
+- If `XPOZ_TOKEN` is missing or Xpoz returns 0 posts, falls through to the GitHub history fallback
 
 ### QuotesAgent (`src/agents/quotes-agent.ts`)
 - Fetches real-time quotes from Yahoo Finance
@@ -47,7 +50,7 @@ Cache TTL: 60 minutes (`stdTTL: 3600`). In-flight guard: `fetchInFlight` promise
 
 Flow on cache miss:
 1. If `fetchInFlight` is null, start `doFetchRecommendations()` and store the promise; otherwise join the existing promise
-2. WallstreetAgent fetches Reddit + calls Claude → raw buy/sell lists
+2. WallstreetAgent fetches from Xpoz + calls Claude → raw buy/sell lists
 3. QuotesAgent + HistoricalAgent enrich each stock in parallel
 4. If buy and sell are both empty → GithubAgent fetches most recent snapshot (fallback)
 5. Result cached; if not a fallback and picks exist → GithubAgent saves snapshot (fire-and-forget)
