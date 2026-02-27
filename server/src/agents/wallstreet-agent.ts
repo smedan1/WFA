@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { StockRecommendation } from '../types/index.js';
 
-const USER_AGENT = 'WFA-App/1.0';
+const USER_AGENT = 'script:WFA:1.0 (by /u/wfa_bot)';
 const SUBREDDIT = 'wallstreetbets';
 
 const SYSTEM_PROMPT = `You are WallstreetAgent, an AI that lives and breathes r/wallstreetbets.
@@ -63,14 +63,24 @@ interface RedditPost {
 }
 
 async function fetchPosts(path: string): Promise<RedditPost[]> {
+  const url = `https://old.reddit.com/r/${SUBREDDIT}/${path}`;
   try {
-    const res = await fetch(`https://www.reddit.com/r/${SUBREDDIT}/${path}`, {
-      headers: { 'User-Agent': USER_AGENT },
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': USER_AGENT,
+        'Accept': 'application/json',
+      },
     });
-    if (!res.ok) return [];
+    console.log(`[WallstreetAgent] GET ${path} → ${res.status}`);
+    if (!res.ok) {
+      const body = await res.text();
+      console.warn(`[WallstreetAgent] Non-OK response body (first 200): ${body.slice(0, 200)}`);
+      return [];
+    }
     const json = await res.json() as { data?: { children?: { data: RedditPost }[] } };
     return (json.data?.children ?? []).map((c) => c.data);
-  } catch {
+  } catch (e) {
+    console.error(`[WallstreetAgent] Fetch error for ${path}:`, e);
     return [];
   }
 }
