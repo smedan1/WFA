@@ -9,9 +9,9 @@ export const stocksRouter = Router();
 const quoteCache = new NodeCache({ stdTTL: 15 });
 const histCache = new NodeCache({ stdTTL: 3600 });
 const analysisCache = new NodeCache({ stdTTL: 300 });
-// ADSK Easter egg reason — refreshed at most every 30 min
-const adskReasonCache = new NodeCache({ stdTTL: 1800 });
-const ADSK_REASON_TTL_MS = 30 * 60 * 1000;
+// ADSK Easter egg — full result (financials + reason) cached together for 30 min
+const adskResultCache = new NodeCache({ stdTTL: 1800 });
+const ADSK_TTL_MS = 30 * 60 * 1000;
 
 stocksRouter.get('/quote/:symbol', async (req: Request<{ symbol: string }>, res: Response) => {
   const { symbol } = req.params;
@@ -58,6 +58,55 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
   try {
     const { basicFinancials, quotes, historical, github } = await getAgents();
 
+    // ADSK Easter egg: serve the full saved result (financials + reason) together for 30 min
+    if (key === 'ADSK') {
+      // 1. In-memory cache (survives repeated requests within the same server instance)
+      let adskResult = adskResultCache.get<Record<string, unknown>>('result');
+
+      // 2. GitHub cache (survives server restarts)
+      if (!adskResult) {
+        const saved = await github.getAdskResult().catch(() => null);
+        if (saved) {
+          const ageMs = Date.now() - new Date(saved.generatedAt).getTime();
+          if (ageMs < ADSK_TTL_MS) {
+            adskResult = saved.result;
+            adskResultCache.set('result', adskResult, Math.floor((ADSK_TTL_MS - ageMs) / 1000));
+            console.log('[ADSK] Serving cached Easter egg result from GitHub');
+          }
+        }
+      }
+
+      if (adskResult) {
+        analysisCache.set(key, adskResult);
+        return res.json(adskResult);
+      }
+
+      // 3. Cache miss — fetch fresh data, generate new reason, save full result
+      console.log('[ADSK] Generating fresh Easter egg result via Claude');
+      const [analysis, quote, hist] = await Promise.allSettled([
+        basicFinancials.analyzeStock(key),
+        quotes.getQuote(key),
+        historical.getHistoricalPrices(key, '3mo', '1d'),
+      ]);
+
+      const freshResult = {
+        ...(analysis.status === 'fulfilled' ? analysis.value : { symbol: key, recommendation: 'SELL', reason: 'Data unavailable', financials: { symbol: key } }),
+        quote: quote.status === 'fulfilled' ? quote.value : null,
+        historicalData: hist.status === 'fulfilled' ? hist.value : [],
+      };
+
+      const adskReason = await basicFinancials.generateAdskReason(freshResult.financials ?? freshResult);
+      freshResult.recommendation = 'BUY';
+      freshResult.reason = adskReason;
+
+      adskResultCache.set('result', freshResult as unknown as Record<string, unknown>);
+      github.saveAdskResult(freshResult as unknown as Record<string, unknown>).catch((e: Error) =>
+        console.warn('[ADSK] Failed to save Easter egg result to GitHub:', e.message)
+      );
+      analysisCache.set(key, freshResult);
+      return res.json(freshResult);
+    }
+
     const [analysis, quote, hist] = await Promise.allSettled([
       basicFinancials.analyzeStock(key),
       quotes.getQuote(key),
@@ -69,37 +118,6 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
       quote: quote.status === 'fulfilled' ? quote.value : null,
       historicalData: hist.status === 'fulfilled' ? hist.value : [],
     };
-
-    if (key === 'ADSK') {
-      // Resolve the Easter egg reason — fresh every 30 min, persisted to GitHub
-      let adskReason = adskReasonCache.get<string>('reason');
-
-      if (!adskReason) {
-        // Try GitHub for a recently generated reason
-        const saved = await github.getAdskReason().catch(() => null);
-        if (saved) {
-          const ageMs = Date.now() - new Date(saved.generatedAt).getTime();
-          if (ageMs < ADSK_REASON_TTL_MS) {
-            adskReason = saved.reason;
-            adskReasonCache.set('reason', adskReason, Math.floor((ADSK_REASON_TTL_MS - ageMs) / 1000));
-            console.log('[ADSK] Using cached Easter egg reason from GitHub');
-          }
-        }
-      }
-
-      if (!adskReason) {
-        // Generate fresh reason from Claude based on actual financials
-        console.log('[ADSK] Generating new Easter egg reason via Claude');
-        adskReason = await basicFinancials.generateAdskReason(result.financials ?? result);
-        adskReasonCache.set('reason', adskReason);
-        github.saveAdskReason(adskReason).catch((e: Error) =>
-          console.warn('[ADSK] Failed to save Easter egg reason to GitHub:', e.message)
-        );
-      }
-
-      result.recommendation = 'BUY';
-      result.reason = adskReason;
-    }
 
     analysisCache.set(key, result);
     return res.json(result);
