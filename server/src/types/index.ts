@@ -4,7 +4,7 @@ export interface StockRecommendation {
   instrumentType?: 'STOCK' | 'ETF';
   recommendation: 'BUY' | 'SELL';
   reason: string;
-  exitReason?: 'rug pull' | 'pool drain' | 'honeypot' | 'dead cat bounce' | 'pump and dump' | 'liquidity crisis';
+  exitReason?: string;
   popularityScore: number;
   quote?: StockQuote;
   historicalData?: HistoricalDataPoint[];
@@ -63,6 +63,9 @@ export interface StockAnalysis {
   recommendation: 'BUY' | 'SELL';
   reason: string;
   financials: BasicFinancials;
+  quote?: StockQuote | null;
+  historicalData?: HistoricalDataPoint[];
+  generatedAt?: string;
 }
 
 export interface RecommendationsResponse {

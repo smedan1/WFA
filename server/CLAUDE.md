@@ -68,8 +68,9 @@ ADSK Easter egg (`GET /api/stocks/analyze/ADSK`):
 - Financial data and reason are always saved together so they stay consistent
 
 ## Types (`src/types/index.ts`)
-- `StockRecommendation` — shared buy/sell pick type (includes `instrumentType: 'STOCK' | 'ETF'`)
+- `StockRecommendation` — shared buy/sell pick type (includes `instrumentType: 'STOCK' | 'ETF'`, `exitReason?: string`)
 - `BasicFinancials` — manual analysis financials (stock + ETF fields)
+- `StockAnalysis` — response shape for `/api/stocks/analyze` (includes `quote?`, `historicalData?`, `generatedAt?`)
 - `RecommendationsResponse` — includes `fromHistory?` and `historicalDate?`
 
 ## CORS
