@@ -1,22 +1,25 @@
-import Anthropic from '@anthropic-ai/sdk';
-import { runAgentLoopWithUrlMCP } from '../services/mcp-manager.js';
-import { MCP_CONFIGS } from '../config/mcp.js';
 import type { StockRecommendation } from '../types/index.js';
 
-const SYSTEM_PROMPT = `You are GithubAgent, responsible for reading and writing WFA recommendation history
-to the GitHub repository. You store recommendations as JSON files and can retrieve past snapshots.
-When writing, commit the file with a descriptive message. When reading, return the parsed JSON content.
-Always respond with valid JSON only — no markdown fences, no prose.`;
+const GH_API = 'https://api.github.com';
 
 export class GithubAgent {
-  private anthropic: Anthropic;
+  private token: string | undefined;
   private repoOwner: string;
   private repoName: string;
 
-  constructor(anthropic: Anthropic, repoOwner: string, repoName: string) {
-    this.anthropic = anthropic;
+  constructor(_anthropic: unknown, repoOwner: string, repoName: string) {
+    this.token = process.env.GITHUB_TOKEN;
     this.repoOwner = repoOwner;
     this.repoName = repoName;
+  }
+
+  private get headers() {
+    return {
+      'Accept': 'application/vnd.github+json',
+      'Authorization': `Bearer ${this.token}`,
+      'X-GitHub-Api-Version': '2022-11-28',
+      'Content-Type': 'application/json',
+    };
   }
 
   async saveRecommendations(recommendations: {
@@ -24,34 +27,42 @@ export class GithubAgent {
     sell: StockRecommendation[];
     timestamp: string;
   }): Promise<void> {
-    if (!MCP_CONFIGS.github.authorizationToken) {
+    if (!this.token) {
       console.warn('[GithubAgent] No GITHUB_TOKEN set — skipping save');
       return;
     }
 
-    const filePath = `data/recommendations/${recommendations.timestamp.split('T')[0]}.json`;
-    const content = JSON.stringify(recommendations, null, 2);
+    const date = recommendations.timestamp.split('T')[0];
+    const filePath = `data/recommendations/${date}.json`;
+    const content = Buffer.from(JSON.stringify(recommendations, null, 2)).toString('base64');
+    const url = `${GH_API}/repos/${this.repoOwner}/${this.repoName}/contents/${filePath}`;
 
-    const userMessage = `
-Save the following JSON to the file "${filePath}" in the repository "${this.repoOwner}/${this.repoName}".
-If the file already exists, overwrite it. Commit message: "chore: save WFA recommendations for ${recommendations.timestamp.split('T')[0]}".
+    // Check if file already exists (need sha to update)
+    let sha: string | undefined;
+    const existing = await fetch(url, { headers: this.headers });
+    if (existing.ok) {
+      const data = await existing.json() as { sha: string };
+      sha = data.sha;
+    }
 
-Content to save:
-${content}
-    `.trim();
+    const body: Record<string, string> = {
+      message: `chore: save WFA recommendations for ${date}`,
+      content,
+    };
+    if (sha) body.sha = sha;
 
-    await runAgentLoopWithUrlMCP(
-      this.anthropic,
-      SYSTEM_PROMPT,
-      userMessage,
-      [
-        {
-          url: MCP_CONFIGS.github.url,
-          name: 'github',
-          authorizationToken: MCP_CONFIGS.github.authorizationToken,
-        },
-      ]
-    );
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: this.headers,
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`[GithubAgent] Failed to save: ${res.status} ${err}`);
+    }
+
+    console.log(`[GithubAgent] Saved ${filePath}`);
   }
 
   async getRecentHistory(days = 7): Promise<Array<{
@@ -59,37 +70,31 @@ ${content}
     buy: StockRecommendation[];
     sell: StockRecommendation[];
   }>> {
-    if (!MCP_CONFIGS.github.authorizationToken) {
+    if (!this.token) {
       console.warn('[GithubAgent] No GITHUB_TOKEN set — returning empty history');
       return [];
     }
 
-    const userMessage = `
-List all files in the "data/recommendations/" directory of repo "${this.repoOwner}/${this.repoName}".
-Return the contents of the ${days} most recent files as a JSON array where each element has:
-{ "date": "YYYY-MM-DD", "buy": [...], "sell": [...] }
-Return ONLY valid JSON, no prose.
-    `.trim();
+    const dirUrl = `${GH_API}/repos/${this.repoOwner}/${this.repoName}/contents/data/recommendations`;
+    const dirRes = await fetch(dirUrl, { headers: this.headers });
+    if (!dirRes.ok) return [];
 
-    const raw = await runAgentLoopWithUrlMCP(
-      this.anthropic,
-      SYSTEM_PROMPT,
-      userMessage,
-      [
-        {
-          url: MCP_CONFIGS.github.url,
-          name: 'github',
-          authorizationToken: MCP_CONFIGS.github.authorizationToken,
-        },
-      ]
+    const files = await dirRes.json() as Array<{ name: string; download_url: string }>;
+    const sorted = files
+      .filter(f => f.name.endsWith('.json'))
+      .sort((a, b) => b.name.localeCompare(a.name))
+      .slice(0, days);
+
+    const results = await Promise.allSettled(
+      sorted.map(async (f) => {
+        const r = await fetch(f.download_url);
+        const data = await r.json() as { buy: StockRecommendation[]; sell: StockRecommendation[]; timestamp: string };
+        return { date: f.name.replace('.json', ''), buy: data.buy, sell: data.sell };
+      })
     );
 
-    try {
-      const cleaned = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      return JSON.parse(cleaned);
-    } catch {
-      console.error('[GithubAgent] Failed to parse history response');
-      return [];
-    }
+    return results
+      .filter((r): r is PromiseFulfilledResult<{ date: string; buy: StockRecommendation[]; sell: StockRecommendation[] }> => r.status === 'fulfilled')
+      .map(r => r.value);
   }
 }
