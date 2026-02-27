@@ -60,6 +60,7 @@ export default function App() {
         historicalDate={recommendations?.historicalDate}
         onRefresh={handleRefresh}
         isLoading={loading}
+        hasError={!!error}
       />
 
       <main className="mx-auto max-w-screen-2xl px-4 py-8 space-y-10">

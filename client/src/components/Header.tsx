@@ -9,9 +9,10 @@ interface Props {
   historicalDate?: string;
   onRefresh: () => void;
   isLoading: boolean;
+  hasError?: boolean;
 }
 
-export function Header({ lastUpdated, fromHistory, historicalDate, onRefresh, isLoading }: Props) {
+export function Header({ lastUpdated, fromHistory, historicalDate, onRefresh, isLoading, hasError }: Props) {
   const [remaining, setRemaining] = useState(0);
 
   useEffect(() => {
@@ -23,7 +24,7 @@ export function Header({ lastUpdated, fromHistory, historicalDate, onRefresh, is
     return () => clearInterval(id);
   }, [lastUpdated]);
 
-  const isDisabled = isLoading || remaining > 0;
+  const isDisabled = isLoading || (remaining > 0 && !hasError);
 
   const buttonLabel = isLoading
     ? 'Loading...'
