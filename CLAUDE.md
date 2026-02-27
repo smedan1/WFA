@@ -53,7 +53,7 @@ Two Railway services from the same GitHub repo (`smedan1/WFA`):
 | `VITE_API_URL` | Server public URL. Omit for local dev (Vite proxy handles `/api` → localhost:3001) |
 
 ## Key design decisions
-- **No Reddit OAuth**: Uses the public `.json` Reddit API with a descriptive User-Agent. Fetches from `old.reddit.com` (less aggressive blocking than `www.reddit.com`). User-Agent format: `script:WFA:1.0 (by /u/wfa_bot)`
+- **No Reddit OAuth**: Uses the public `.json` Reddit API with a descriptive User-Agent. Fetches from `old.reddit.com` (less aggressive blocking than `www.reddit.com`). User-Agent: `wallace-financial-agent-humour-personal-pet-project:1.1 (by /u/ArenaClowner)`. Fetches are serialized (not parallel), paginated 10 posts at a time (up to 40 per endpoint), with 1s between requests. On 429, waits `max(3s, Retry-After)` and retries up to 3 times.
 - **No MCP for GitHub**: Uses GitHub REST API (Contents API PUT) directly with a PAT. The Copilot MCP endpoint (`api.githubcopilot.com/mcp/`) requires a Copilot token, not a standard PAT.
 - **Reactive server**: No scheduled jobs. Reddit is only fetched when a client requests recommendations.
 - **60-minute cache**: Recommendations are cached in-memory (`node-cache`, `stdTTL: 3600`). GitHub history save is fire-and-forget after cache miss.
@@ -67,7 +67,7 @@ Two Railway services from the same GitHub repo (`smedan1/WFA`):
 - No vulgar language, potty humor, or profanity in AI-generated text
 - WSB community referred to as **"the bravely uninformed"**
 - The term "tendies" is acceptable (WSB culture reference, not vulgar)
-- Loading messages: pool of 30 rotating humorous messages (cycle every 4 seconds)
+- Loading messages: pool of 30 rotating humorous messages (cycle every 5 seconds)
 
 ## API routes
 | Method | Path | Description |

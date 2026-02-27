@@ -12,7 +12,7 @@ React 18 + TypeScript + Vite 6 + Tailwind CSS SPA. Entry: `src/main.tsx` → `sr
 | `StockCard.tsx` | Individual buy/sell card — shows symbol, price, chart, "Wallace Says:" reason, metrics |
 | `ManualLookup.tsx` | Manual ticker analysis — search form + result with BUY/SELL badge, chart, fundamentals |
 | `StockChart.tsx` | Recharts line chart for 3-month historical prices |
-| `LoadingState.tsx` | Spinning loader with rotating humorous messages (pool of 30, cycles every 4 seconds) |
+| `LoadingState.tsx` | Spinning loader with rotating humorous messages (pool of 30, cycles every 5 seconds) |
 
 ## API client (`src/api/client.ts`)
 Base URL: `VITE_API_URL + '/api'`. In local dev, `VITE_API_URL` is empty and Vite proxies `/api` → `localhost:3001`. In production, set `VITE_API_URL` to the Railway server public URL.
@@ -43,11 +43,12 @@ Font: JetBrains Mono (loaded from Google Fonts in `index.html`).
 - `CACHE_TTL_MS = 60 * 60 * 1000` — must match server's `stdTTL: 3600`
 - Countdown computed from `lastUpdated + CACHE_TTL_MS`; ticks every second via `setInterval`
 - Button shows `MM:SS` countdown and is disabled while `remaining > 0`
-- Disabled state: `isLoading || (remaining > 0 && !hasError)` — error bypasses the countdown so users can retry immediately
+- `showCountdown = remaining > 0 && !hasError && !fromHistory` — error or historical fallback bypasses countdown so users can retry immediately
+- `isDisabled = isLoading || showCountdown`
 - Button shows `Loading...` while `isLoading`, `MM:SS` while locked, `Refresh` when ready
 
 ## Loading screen behaviour (`App.tsx`)
-- Initial disclaimer dismiss: `holdLoading = true` for 4 seconds so users can read humorous messages even if data arrives early
+- Initial disclaimer dismiss: `holdLoading = true` for 5 seconds so users can read humorous messages even if data arrives early
 - Loading screen shown whenever `loading || holdLoading` — this includes during Refresh (cards are hidden)
 - Cards shown only when `recommendations && !loading && !holdLoading`
 - Error shown only when `error && !loading && !holdLoading`

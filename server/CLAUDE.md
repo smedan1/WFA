@@ -6,8 +6,10 @@ Express + TypeScript API server. Entry point: `src/index.ts`. Built with `tsc` t
 Agents are lazy-initialized singletons via `src/agents/registry.ts`. All agents are initialized once on first request and reused.
 
 ### WallstreetAgent (`src/agents/wallstreet-agent.ts`)
-- Fetches posts from `old.reddit.com/r/wallstreetbets` (hot + top week + top month, 100 each)
-- User-Agent: `script:WFA:1.0 (by /u/wfa_bot)` — Reddit's required format
+- Fetches posts from `old.reddit.com/r/wallstreetbets` (hot + top week + top month, up to 40 each)
+- Fetches are **serialized** (not parallel), paginated 10 posts at a time via Reddit's `after` cursor, with 1s delay between every request
+- On 429: reads `Retry-After` header, waits `max(3s, header value)`, retries up to 3 times
+- User-Agent: `wallace-financial-agent-humour-personal-pet-project:1.1 (by /u/ArenaClowner)`
 - Deduplicates posts by title, formats with age/score/comments for Claude
 - Sends to `claude-sonnet-4-6` with a structured prompt to identify up to 5 BUY and 5 SELL instruments (stocks or ETFs)
 - WSB community referred to as "the bravely uninformed" in the prompt
