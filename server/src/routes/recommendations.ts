@@ -17,7 +17,7 @@ recommendationsRouter.get('/', async (_req: Request, res: Response) => {
   }
 
   try {
-    const { wallstreet, quotes, historical } = await getAgents();
+    const { wallstreet, quotes, historical, github } = await getAgents();
 
     // Step 1: Get WSB recommendations
     const { buy: rawBuy, sell: rawSell } = await wallstreet.getRecommendations();
@@ -47,6 +47,14 @@ recommendationsRouter.get('/', async (_req: Request, res: Response) => {
     };
 
     cache.set(CACHE_KEY, result);
+
+    // Fire-and-forget: persist to GitHub without blocking the response
+    github.saveRecommendations({
+      buy,
+      sell,
+      timestamp: result.lastUpdated,
+    }).catch((e) => console.warn('[recommendations] GithubAgent save failed:', e.message));
+
     return res.json(result);
   } catch (err) {
     console.error('[recommendations] Error:', err);

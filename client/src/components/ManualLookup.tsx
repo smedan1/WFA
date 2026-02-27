@@ -104,18 +104,18 @@ export function ManualLookup() {
       {result && !loading && (
         <div className="space-y-4">
           {/* Header row */}
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="flex items-baseline gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-3 flex-wrap">
                 <span className={`text-3xl font-bold font-mono ${isBuy ? 'text-buy' : 'text-sell'}`}>
                   {result.symbol}
                 </span>
                 {result.financials.companyName && (
-                  <span className="text-sm text-gray-400">{result.financials.companyName}</span>
+                  <span className="text-sm text-gray-400 truncate">{result.financials.companyName}</span>
                 )}
               </div>
               {result.quote && (
-                <div className="flex items-baseline gap-2 mt-1">
+                <div className="flex items-baseline gap-2 mt-1 flex-wrap">
                   <span className="text-xl font-bold font-mono text-white">
                     {formatPrice(result.quote.price)}
                   </span>
@@ -127,7 +127,7 @@ export function ManualLookup() {
               )}
             </div>
 
-            <div className={`shrink-0 rounded-xl px-6 py-3 text-center ${isBuy ? 'bg-buy-bg border border-buy-border' : 'bg-sell-bg border border-sell-border'}`}>
+            <div className={`shrink-0 rounded-xl px-6 py-3 text-center self-start ${isBuy ? 'bg-buy-bg border border-buy-border' : 'bg-sell-bg border border-sell-border'}`}>
               <p className={`text-2xl font-bold font-mono ${isBuy ? 'text-buy' : 'text-sell'}`}>
                 {result.recommendation}
               </p>
