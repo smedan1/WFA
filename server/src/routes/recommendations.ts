@@ -6,8 +6,8 @@ import { getAgents } from '../agents/registry.js';
 
 export const recommendationsRouter = Router();
 
-// Cache for 15 minutes — Reddit scraping is expensive
-const cache = new NodeCache({ stdTTL: 900 });
+// Cache for 30 minutes — Reddit scraping is expensive
+const cache = new NodeCache({ stdTTL: 1800 });
 const CACHE_KEY = 'recommendations';
 
 recommendationsRouter.get('/', async (_req: Request, res: Response) => {
