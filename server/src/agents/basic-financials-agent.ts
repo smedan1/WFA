@@ -8,7 +8,7 @@ const STOCK_PROMPT = `You are BasicFinancialsAgent. Your job is to:
 1. Analyze the fundamental financial data provided for a stock.
 2. Produce a BUY or SELL recommendation with a brief 2-sentence reason.
 3. The reason should be grounded in the fundamentals (P/E, debt, revenue growth, short float, beta, etc.).
-4. Keep the tone slightly humorous but financially accurate.
+4. Keep the tone humorous but financially accurate. No vulgar language, body humor, or profanity — dry wit only.
 
 Return ONLY valid JSON matching this structure (no markdown fences, no prose):
 {
@@ -38,7 +38,7 @@ const ETF_PROMPT = `You are BasicFinancialsAgent. Your job is to:
 1. Analyze the fundamental data provided for an ETF.
 2. Produce a BUY or SELL recommendation with a brief 2-sentence reason.
 3. The reason should be grounded in ETF-specific metrics (expense ratio, AUM, category, yield, beta, etc.).
-4. Keep the tone slightly humorous but financially accurate.
+4. Keep the tone humorous but financially accurate. No vulgar language, body humor, or profanity — dry wit only.
 
 Return ONLY valid JSON matching this structure (no markdown fences, no prose):
 {

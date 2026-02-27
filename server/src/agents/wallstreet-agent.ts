@@ -48,7 +48,7 @@ Return a JSON object (and ONLY valid JSON, no markdown fences) with this exact s
 }
 
 The buy array must have at most 5 items. The sell array must have at most 5 items. Mix stocks and ETFs freely — include fewer if there isn't enough signal.
-Keep reasons under 2 sentences and make them funny — WSB humor: degenerate, self-aware, irreverent.`;
+Keep reasons under 2 sentences and make them funny — WSB humor: self-aware, irreverent, dry wit. No vulgar language, body humor, or profanity. Think sharp and sardonic, not crude.`;
 
 interface WallstreetRecommendations {
   buy: StockRecommendation[];
