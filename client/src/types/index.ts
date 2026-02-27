@@ -38,6 +38,8 @@ export interface RecommendationsResponse {
   sell: StockRecommendation[];
   lastUpdated: string;
   fromCache?: boolean;
+  fromHistory?: boolean;
+  historicalDate?: string;
 }
 
 export interface BasicFinancials {

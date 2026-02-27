@@ -35,21 +35,38 @@ recommendationsRouter.get('/', async (_req: Request, res: Response) => {
       };
     };
 
-    const [buy, sell] = await Promise.all([
+    let [buy, sell] = await Promise.all([
       Promise.all(rawBuy.map(enrichStock)),
       Promise.all(rawSell.map(enrichStock)),
     ]);
+
+    let fromHistory = false;
+    let historicalDate: string | undefined;
+
+    // If Reddit returned nothing, fall back to the most recent GitHub snapshot
+    if (buy.length === 0 && sell.length === 0) {
+      console.log('[recommendations] Reddit returned no data — trying GitHub history fallback');
+      const history = await github.getRecentHistory(1).catch(() => []);
+      if (history.length > 0) {
+        buy = history[0].buy;
+        sell = history[0].sell;
+        fromHistory = true;
+        historicalDate = history[0].date;
+        console.log(`[recommendations] Using historical data from ${historicalDate}`);
+      }
+    }
 
     const result: RecommendationsResponse = {
       buy,
       sell,
       lastUpdated: new Date().toISOString(),
+      ...(fromHistory && { fromHistory: true, historicalDate }),
     };
 
     cache.set(CACHE_KEY, result);
 
-    // Fire-and-forget: persist to GitHub without blocking the response (skip if no data)
-    if (buy.length > 0 || sell.length > 0) {
+    // Fire-and-forget: persist to GitHub without blocking the response (skip if no data or using history)
+    if (!fromHistory && (buy.length > 0 || sell.length > 0)) {
       github.saveRecommendations({
         buy,
         sell,

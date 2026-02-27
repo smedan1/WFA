@@ -69,6 +69,8 @@ export interface RecommendationsResponse {
   buy: StockRecommendation[];
   sell: StockRecommendation[];
   lastUpdated: string;
+  fromHistory?: boolean;
+  historicalDate?: string;
 }
 
 export interface AgentResult<T> {

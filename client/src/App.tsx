@@ -68,6 +68,18 @@ export default function App() {
 
         {recommendations && (
           <>
+            {/* Historical data banner */}
+            {recommendations.fromHistory && (
+              <div className="rounded-xl border border-yellow-700/50 bg-yellow-950/30 px-5 py-3 flex items-center gap-3">
+                <span className="text-yellow-400 text-lg">⚠</span>
+                <p className="text-sm font-mono text-yellow-300">
+                  Live data unavailable — showing saved picks from{' '}
+                  <span className="font-bold">{recommendations.historicalDate}</span>.
+                  Hit Refresh to try again.
+                </p>
+              </div>
+            )}
+
             {/* BUY panel */}
             <section>
               <div className="flex items-center gap-3 mb-5">
