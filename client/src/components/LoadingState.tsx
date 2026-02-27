@@ -44,7 +44,7 @@ export function LoadingState() {
   useEffect(() => {
     const id = setInterval(() => {
       setMessage(prev => randomMessage(prev));
-    }, 3000);
+    }, 4000);
     return () => clearInterval(id);
   }, []);
 
