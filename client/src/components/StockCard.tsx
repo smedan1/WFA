@@ -134,7 +134,7 @@ export function StockCard({ stock, rank }: Props) {
       {/* AI reason */}
       <div className={`rounded-lg p-3 text-xs leading-relaxed text-gray-300 ${isBuy ? 'bg-buy-bg/40 border border-buy-border/30' : 'bg-sell-bg/40 border border-sell-border/30'}`}>
         <span className={`text-xs font-bold font-mono uppercase tracking-wider ${isBuy ? 'text-buy' : 'text-sell'}`}>
-          WSB Says:
+          Wallace Says:
         </span>
         <p className="mt-1">{stock.reason}</p>
       </div>

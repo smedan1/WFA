@@ -147,7 +147,7 @@ export function ManualLookup() {
           {/* Reason */}
           <div className={`rounded-xl p-4 ${isBuy ? 'bg-buy-bg/40 border border-buy-border/30' : 'bg-sell-bg/40 border border-sell-border/30'}`}>
             <p className={`text-xs font-bold font-mono uppercase tracking-wider mb-1.5 ${isBuy ? 'text-buy' : 'text-sell'}`}>
-              BasicFinancialsAgent says:
+              Wallace Says:
             </p>
             <p className="text-sm text-gray-200 leading-relaxed">{result.reason}</p>
           </div>
