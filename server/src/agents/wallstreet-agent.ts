@@ -62,6 +62,8 @@ interface RedditPost {
   created_utc: number;
 }
 
+// 6100ms between requests = ~9.8 QPM, just under Reddit's 10 QPM unauthenticated limit
+const INTER_REQUEST_DELAY_MS = 6100;
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 async function fetchPage(basePath: string, limit: number, after?: string): Promise<{ posts: RedditPost[]; nextAfter: string | null }> {
@@ -121,7 +123,7 @@ async function fetchPosts(basePath: string): Promise<RedditPost[]> {
   const all: RedditPost[] = [];
   let after: string | undefined;
   while (all.length < 40) {
-    await sleep(1000);
+    await sleep(INTER_REQUEST_DELAY_MS);
     const { posts, nextAfter } = await fetchPage(basePath, 10, after);
     all.push(...posts);
     if (!nextAfter || posts.length === 0) break;
