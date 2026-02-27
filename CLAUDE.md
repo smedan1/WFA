@@ -11,7 +11,8 @@ WFA/
   client/         React + Vite + Tailwind frontend
   server/         Express + TypeScript backend (AI agents)
   data/
-    recommendations/  YYYY-MM-DD.json daily snapshots (written by GithubAgent)
+    recommendations/  YYYY-MM-DD-HH.json hourly snapshots (written by GithubAgent)
+    easter-eggs/      adsk.json — ADSK Easter egg result (reason + financials, 30-min TTL)
 ```
 
 ## Tech stack
@@ -55,9 +56,11 @@ Two Railway services from the same GitHub repo (`smedan1/WFA`):
 - **No Reddit OAuth**: Uses the public `.json` Reddit API with a descriptive User-Agent. Fetches from `old.reddit.com` (less aggressive blocking than `www.reddit.com`). User-Agent format: `script:WFA:1.0 (by /u/wfa_bot)`
 - **No MCP for GitHub**: Uses GitHub REST API (Contents API PUT) directly with a PAT. The Copilot MCP endpoint (`api.githubcopilot.com/mcp/`) requires a Copilot token, not a standard PAT.
 - **Reactive server**: No scheduled jobs. Reddit is only fetched when a client requests recommendations.
-- **30-minute cache**: Recommendations are cached in-memory (`node-cache`). GitHub history save is fire-and-forget after cache miss.
-- **GitHub history fallback**: If Reddit returns 0 posts, the server falls back to the most recent daily snapshot from `data/recommendations/`. The UI shows an amber banner and "Cached data from YYYY-MM-DD" in the header.
+- **60-minute cache**: Recommendations are cached in-memory (`node-cache`, `stdTTL: 3600`). GitHub history save is fire-and-forget after cache miss.
+- **In-flight guard**: All concurrent cache-miss GET requests share a single Reddit fetch promise (`fetchInFlight`). POST `/refresh` resets it so forced refreshes always start fresh.
+- **GitHub history fallback**: If Reddit returns 0 posts, the server falls back to the most recent hourly snapshot from `data/recommendations/`. The UI shows an amber banner and "Cached data from YYYY-MM-DD" in the header.
 - **GitHub save guard**: History is only saved when Reddit returns actual picks (not when serving historical fallback data).
+- **ADSK Easter egg**: When a user manually looks up `ADSK`, the server always returns BUY with a Claude-generated enthusiastic reason based on actual financials. The full result (financials + reason) is cached for 30 minutes in-memory and persisted to `data/easter-eggs/adsk.json` on GitHub for cross-restart persistence.
 
 ## Tone and humor guidelines
 - Humor style: **dry wit, self-aware, sardonic** — think sharp commentary, not crude jokes
@@ -70,7 +73,7 @@ Two Railway services from the same GitHub repo (`smedan1/WFA`):
 | Method | Path | Description |
 |---|---|---|
 | GET | `/health` | Health check |
-| GET | `/api/recommendations` | Get buy/sell picks (cached 30 min) |
+| GET | `/api/recommendations` | Get buy/sell picks (cached 60 min, in-flight guard) |
 | POST | `/api/recommendations/refresh` | Clear cache |
 | GET | `/api/stocks/quote/:symbol` | Real-time quote |
 | GET | `/api/stocks/historical/:symbol` | Historical OHLCV data |

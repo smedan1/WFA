@@ -29,22 +29,36 @@ Agents are lazy-initialized singletons via `src/agents/registry.ts`. All agents 
 - ETF metrics: AUM, expense ratio, category, NAV, yield, beta, inception date
 - Stock metrics: market cap, P/E, EPS, revenue, profit margin, debt/equity, current ratio, beta, short float, dividend yield, P/B
 - Tone: humorous but financially accurate; dry wit only, no vulgarity
+- `generateAdskReason(financials)`: special Claude call for ADSK Easter egg — returns an exaggeratedly bullish BUY reason acknowledging the user is probably an Autodesk employee
 
 ### GithubAgent (`src/agents/github-agent.ts`)
 - Uses GitHub REST API directly (no MCP) — `PUT /repos/{owner}/{repo}/contents/{path}`
-- `saveRecommendations()`: saves daily snapshot to `data/recommendations/YYYY-MM-DD.json`
-- `getRecentHistory(days)`: lists directory, sorts by filename desc (YYYY-MM-DD), fetches N most recent
-- Falls back gracefully (returns `[]`) if `GITHUB_TOKEN` is not set
+- `saveRecommendations()`: saves hourly snapshot to `data/recommendations/YYYY-MM-DD-HH.json` (UTC hour)
+- `getRecentHistory(days)`: lists directory, sorts by filename desc, returns `date` as `YYYY-MM-DD` (hour stripped for display)
+- `saveAdskResult(result)`: saves full ADSK Easter egg result to `data/easter-eggs/adsk.json` with `generatedAt` timestamp
+- `getAdskResult()`: returns `{ result, generatedAt }` or null; used to check if cached reason is < 30 min old
+- Falls back gracefully (returns `[]` / `null`) if `GITHUB_TOKEN` is not set
 - **Do NOT use `api.githubcopilot.com/mcp/`** — that requires a Copilot subscription token, not a PAT
 
 ## Recommendations route (`src/routes/recommendations.ts`)
+Cache TTL: 60 minutes (`stdTTL: 3600`). In-flight guard: `fetchInFlight` promise shared across concurrent requests; reset by POST `/refresh`.
+
 Flow on cache miss:
-1. WallstreetAgent fetches Reddit + calls Claude → raw buy/sell lists
-2. QuotesAgent + HistoricalAgent enrich each stock in parallel
-3. If buy and sell are both empty → GithubAgent fetches most recent snapshot (fallback)
-4. Result cached for 30 minutes (`stdTTL: 1800`)
-5. If not a fallback and picks exist → GithubAgent saves snapshot (fire-and-forget)
+1. If `fetchInFlight` is null, start `doFetchRecommendations()` and store the promise; otherwise join the existing promise
+2. WallstreetAgent fetches Reddit + calls Claude → raw buy/sell lists
+3. QuotesAgent + HistoricalAgent enrich each stock in parallel
+4. If buy and sell are both empty → GithubAgent fetches most recent snapshot (fallback)
+5. Result cached; if not a fallback and picks exist → GithubAgent saves snapshot (fire-and-forget)
 6. Response includes `fromHistory: true` + `historicalDate` when serving fallback data
+
+## Stocks route (`src/routes/stocks.ts`)
+Cache TTLs: quotes 15s, historical 1h, analysis 5min.
+
+ADSK Easter egg (`GET /api/stocks/analyze/ADSK`):
+- Checks `adskResultCache` (30-min NodeCache) first
+- Then checks `github.getAdskResult()` — if `generatedAt` < 30 min ago, uses saved result (whole snapshot: financials + reason)
+- On cache miss: fetches fresh financial data, calls `basicFinancials.generateAdskReason()`, forces `recommendation: 'BUY'`, saves full result to GitHub (fire-and-forget), caches 30 min
+- Financial data and reason are always saved together so they stay consistent
 
 ## Types (`src/types/index.ts`)
 - `StockRecommendation` — shared buy/sell pick type (includes `instrumentType: 'STOCK' | 'ETF'`)

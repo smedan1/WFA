@@ -7,7 +7,7 @@ React 18 + TypeScript + Vite 6 + Tailwind CSS SPA. Entry: `src/main.tsx` → `sr
 | Component | Purpose |
 |---|---|
 | `App.tsx` | Root — manages state, fetches recommendations, renders all panels |
-| `Header.tsx` | Sticky header with title, tagline, timestamp, Refresh button, disclaimer bar |
+| `Header.tsx` | Sticky header with title, tagline, timestamp, Refresh button (with countdown), disclaimer bar |
 | `WarningModal.tsx` | Full-screen disclaimer modal on first visit (sessionStorage key: `wfa_warning_accepted`) |
 | `StockCard.tsx` | Individual buy/sell card — shows symbol, price, chart, "Wallace Says:" reason, metrics |
 | `ManualLookup.tsx` | Manual ticker analysis — search form + result with BUY/SELL badge, chart, fundamentals |
@@ -38,6 +38,19 @@ Font: JetBrains Mono (loaded from Google Fonts in `index.html`).
 - WarningModal: `items-start sm:items-center overflow-y-auto py-4 sm:py-0` — scrollable on mobile so checkbox and button are reachable
 - ManualLookup result header: `flex-col sm:flex-row` — stacks on mobile, side-by-side on sm+
 - Header hides timestamp on small screens (`hidden md:block`)
+
+## Refresh button behaviour (`Header.tsx`)
+- `CACHE_TTL_MS = 60 * 60 * 1000` — must match server's `stdTTL: 3600`
+- Countdown computed from `lastUpdated + CACHE_TTL_MS`; ticks every second via `setInterval`
+- Button shows `MM:SS` countdown and is disabled while `remaining > 0`
+- Disabled state: `isLoading || (remaining > 0 && !hasError)` — error bypasses the countdown so users can retry immediately
+- Button shows `Loading...` while `isLoading`, `MM:SS` while locked, `Refresh` when ready
+
+## Loading screen behaviour (`App.tsx`)
+- Initial disclaimer dismiss: `holdLoading = true` for 4 seconds so users can read humorous messages even if data arrives early
+- Loading screen shown whenever `loading || holdLoading` — this includes during Refresh (cards are hidden)
+- Cards shown only when `recommendations && !loading && !holdLoading`
+- Error shown only when `error && !loading && !holdLoading`
 
 ## Historical data fallback UI
 When `recommendations.fromHistory === true`:
