@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { StockRecommendation } from '../types/index.js';
 
-const USER_AGENT = 'script:WFA:1.0 (by /u/wfa_bot)';
+const USER_AGENT = 'script:WFA:1.0 (by /u/ArenaClowner)';
 const SUBREDDIT = 'wallstreetbets';
 
 const SYSTEM_PROMPT = `You are WallstreetAgent, an AI that lives and breathes r/wallstreetbets.
