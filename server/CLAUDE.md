@@ -17,7 +17,8 @@ Agents are lazy-initialized singletons via `src/agents/registry.ts`. All agents 
 - WSB community referred to as "the bravely uninformed" in the prompt
 - Weighting: last week = 10x, last 2 weeks = 3x, last month = 2x
 - Returns `{ buy: StockRecommendation[], sell: StockRecommendation[] }`
-- Minimum 5 mentions to qualify; exits labelled as: rug pull, pool drain, honeypot, dead cat bounce, pump and dump, liquidity crisis, earnings crater, short attack, FDA rejection, margin call cascade, greater fool exit, reverse split trap
+- Minimum 5 mentions to qualify; buy reasons: short squeeze, gamma squeeze, catalyst play, earnings beat, oversold bounce, breakout, sector rotation, deep value, turnaround play, insider accumulation, buyback bonanza, GARP, spinoff, activist entry
+- Exit reasons: rug pull, pool drain, honeypot, dead cat bounce, pump and dump, liquidity crisis, earnings crater, short attack, FDA rejection, margin call cascade, greater fool exit, reverse split trap
 - If `XPOZ_TOKEN` is missing or Xpoz returns 0 posts, falls through to the GitHub history fallback
 
 ### QuotesAgent (`src/agents/quotes-agent.ts`)
@@ -68,7 +69,7 @@ ADSK Easter egg (`GET /api/stocks/analyze/ADSK`):
 - Financial data and reason are always saved together so they stay consistent
 
 ## Types (`src/types/index.ts`)
-- `StockRecommendation` — shared buy/sell pick type (includes `instrumentType: 'STOCK' | 'ETF'`, `exitReason?: string`)
+- `StockRecommendation` — shared buy/sell pick type (includes `instrumentType: 'STOCK' | 'ETF'`, `buyReason?: string`, `exitReason?: string`)
 - `BasicFinancials` — manual analysis financials (stock + ETF fields)
 - `StockAnalysis` — response shape for `/api/stocks/analyze` (includes `quote?`, `historicalData?`, `generatedAt?`)
 - `RecommendationsResponse` — includes `fromHistory?` and `historicalDate?`

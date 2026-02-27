@@ -4,6 +4,7 @@ export interface StockRecommendation {
   instrumentType?: 'STOCK' | 'ETF';
   recommendation: 'BUY' | 'SELL';
   reason: string;
+  buyReason?: string;
   exitReason?: string;
   popularityScore: number;
   quote?: StockQuote;

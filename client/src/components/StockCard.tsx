@@ -73,6 +73,11 @@ export function StockCard({ stock, rank }: Props) {
                 ETF
               </span>
             )}
+            {stock.buyReason && (
+              <span className="text-xs text-buy/70 font-mono uppercase tracking-wider">
+                [{stock.buyReason}]
+              </span>
+            )}
             {stock.exitReason && (
               <span className="text-xs text-red-400/70 font-mono uppercase tracking-wider">
                 [{stock.exitReason}]

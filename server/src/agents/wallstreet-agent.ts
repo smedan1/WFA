@@ -33,6 +33,7 @@ Return a JSON object (and ONLY valid JSON, no markdown fences) with this exact s
       "instrumentType": "STOCK",
       "popularityScore": 0-100,
       "reason": "Funny 2-sentence max reason to buy. Must be irreverent and reference WSB culture.",
+      "buyReason": "short squeeze|gamma squeeze|catalyst play|earnings beat|oversold bounce|breakout|sector rotation|deep value|turnaround play|insider accumulation|buyback bonanza|GARP|spinoff|activist entry",
       "recommendation": "BUY"
     }
   ],
