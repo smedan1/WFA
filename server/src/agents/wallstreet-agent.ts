@@ -62,8 +62,13 @@ interface RedditPost {
   created_utc: number;
 }
 
-async function fetchPosts(path: string): Promise<RedditPost[]> {
-  const url = `https://old.reddit.com/r/${SUBREDDIT}/${path}`;
+declare function setTimeout(callback: () => void, ms?: number): unknown;
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+async function fetchPage(basePath: string, limit: number, after?: string): Promise<{ posts: RedditPost[]; nextAfter: string | null }> {
+  const sep = basePath.includes('?') ? '&' : '?';
+  let url = `https://old.reddit.com/r/${SUBREDDIT}/${basePath}${sep}limit=${limit}`;
+  if (after) url += `&after=${after}`;
   try {
     const res = await fetch(url, {
       headers: {
@@ -71,18 +76,32 @@ async function fetchPosts(path: string): Promise<RedditPost[]> {
         'Accept': 'application/json',
       },
     });
-    console.log(`[WallstreetAgent] GET ${path} → ${res.status}`);
+    console.log(`[WallstreetAgent] GET ${basePath} after=${after ?? 'start'} → ${res.status}`);
     if (!res.ok) {
       const body = await res.text();
       console.warn(`[WallstreetAgent] Non-OK response body (first 200): ${body.slice(0, 200)}`);
-      return [];
+      return { posts: [], nextAfter: null };
     }
-    const json = await res.json() as { data?: { children?: { data: RedditPost }[] } };
-    return (json.data?.children ?? []).map((c) => c.data);
+    const json = await res.json() as { data?: { children?: { data: RedditPost }[]; after?: string | null } };
+    const posts = (json.data?.children ?? []).map((c) => c.data);
+    return { posts, nextAfter: json.data?.after ?? null };
   } catch (e) {
-    console.error(`[WallstreetAgent] Fetch error for ${path}:`, e);
-    return [];
+    console.error(`[WallstreetAgent] Fetch error for ${basePath}:`, e);
+    return { posts: [], nextAfter: null };
   }
+}
+
+async function fetchPosts(basePath: string): Promise<RedditPost[]> {
+  const all: RedditPost[] = [];
+  let after: string | undefined;
+  while (all.length < 40) {
+    await sleep(1000);
+    const { posts, nextAfter } = await fetchPage(basePath, 10, after);
+    all.push(...posts);
+    if (!nextAfter || posts.length === 0) break;
+    after = nextAfter;
+  }
+  return all;
 }
 
 export class WallstreetAgent {
@@ -97,11 +116,9 @@ export class WallstreetAgent {
   }
 
   async getRecommendations(): Promise<WallstreetRecommendations> {
-    const [hot, topWeek, topMonth] = await Promise.all([
-      fetchPosts('hot.json?limit=100'),
-      fetchPosts('top.json?t=week&limit=100'),
-      fetchPosts('top.json?t=month&limit=100'),
-    ]);
+    const hot = await fetchPosts('hot.json');
+    const topWeek = await fetchPosts('top.json?t=week');
+    const topMonth = await fetchPosts('top.json?t=month');
 
     console.log(`[WallstreetAgent] Reddit fetch: hot=${hot.length} topWeek=${topWeek.length} topMonth=${topMonth.length}`);
 
