@@ -52,6 +52,8 @@ export default function App() {
 
       <Header
         lastUpdated={recommendations?.lastUpdated}
+        fromHistory={recommendations?.fromHistory}
+        historicalDate={recommendations?.historicalDate}
         onRefresh={handleRefresh}
         isLoading={loading}
       />

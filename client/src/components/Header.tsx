@@ -1,10 +1,12 @@
 interface Props {
   lastUpdated?: string;
+  fromHistory?: boolean;
+  historicalDate?: string;
   onRefresh: () => void;
   isLoading: boolean;
 }
 
-export function Header({ lastUpdated, onRefresh, isLoading }: Props) {
+export function Header({ lastUpdated, fromHistory, historicalDate, onRefresh, isLoading }: Props) {
   return (
     <header className="sticky top-0 z-40 border-b border-gray-800 bg-gray-950/95 backdrop-blur-sm">
       <div className="mx-auto max-w-screen-2xl px-4 py-3 flex items-center justify-between gap-4">
@@ -21,7 +23,11 @@ export function Header({ lastUpdated, onRefresh, isLoading }: Props) {
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          {lastUpdated && (
+          {fromHistory && historicalDate ? (
+            <span className="hidden md:block text-xs text-yellow-600 font-mono">
+              Cached data from {historicalDate}
+            </span>
+          ) : lastUpdated && (
             <span className="hidden md:block text-xs text-gray-600 font-mono">
               Updated {new Date(lastUpdated).toLocaleTimeString()}
             </span>
