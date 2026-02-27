@@ -17,7 +17,7 @@ Agents are lazy-initialized singletons via `src/agents/registry.ts`. All agents 
 - WSB community referred to as "the bravely uninformed" in the prompt
 - Weighting: last week = 10x, last 2 weeks = 3x, last month = 2x
 - Returns `{ buy: StockRecommendation[], sell: StockRecommendation[] }`
-- Minimum 5 mentions to qualify; exits labelled as: rug pull, pool drain, honeypot, dead cat bounce, pump and dump, liquidity crisis
+- Minimum 5 mentions to qualify; exits labelled as: rug pull, pool drain, honeypot, dead cat bounce, pump and dump, liquidity crisis, earnings crater, short attack, FDA rejection, margin call cascade, greater fool exit, reverse split trap
 - If `XPOZ_TOKEN` is missing or Xpoz returns 0 posts, falls through to the GitHub history fallback
 
 ### QuotesAgent (`src/agents/quotes-agent.ts`)

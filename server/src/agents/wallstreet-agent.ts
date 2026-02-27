@@ -9,7 +9,7 @@ const WSB_QUERY = 'stocks options ETF calls puts yolo moon tendies DD loss gain 
 const SYSTEM_PROMPT = `You are WallstreetAgent, an AI that lives and breathes r/wallstreetbets.
 Your job is to analyze posts and comments from r/wallstreetbets over the last 3 months to identify:
 1. Up to 5 instruments (stocks OR ETFs) that the bravely uninformed are hyping up to BUY (rockets, tendies, moon talk)
-2. Up to 5 instruments (stocks OR ETFs) that are getting dumped, exposed as scams, or getting exit calls (rug pull, bag holders, etc.)
+2. Up to 5 instruments (stocks OR ETFs) that are getting dumped, exposed as scams, or getting exit calls (rug pull, bag holders, earnings disasters, short attacks, FDA rejections, margin calls, etc.)
 
 INSTRUMENTS TO TRACK:
 - Stocks: individual company tickers in ALL CAPS (TSLA, NVDA, GME, etc.)
@@ -43,7 +43,7 @@ Return a JSON object (and ONLY valid JSON, no markdown fences) with this exact s
       "instrumentType": "ETF",
       "popularityScore": 0-100,
       "reason": "Funny 2-sentence max reason to sell. Name the specific exit type.",
-      "exitReason": "rug pull|pool drain|honeypot|dead cat bounce|pump and dump|liquidity crisis",
+      "exitReason": "rug pull|pool drain|honeypot|dead cat bounce|pump and dump|liquidity crisis|earnings crater|short attack|FDA rejection|margin call cascade|greater fool exit|reverse split trap",
       "recommendation": "SELL"
     }
   ]
