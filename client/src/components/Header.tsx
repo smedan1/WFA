@@ -24,11 +24,13 @@ export function Header({ lastUpdated, fromHistory, historicalDate, onRefresh, is
     return () => clearInterval(id);
   }, [lastUpdated]);
 
-  const isDisabled = isLoading || (remaining > 0 && !hasError);
+  // Show countdown only when cache is fresh AND there's no error AND not serving historical fallback
+  const showCountdown = remaining > 0 && !hasError && !fromHistory;
+  const isDisabled = isLoading || showCountdown;
 
   const buttonLabel = isLoading
     ? 'Loading...'
-    : remaining > 0
+    : showCountdown
       ? `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`
       : 'Refresh';
 
