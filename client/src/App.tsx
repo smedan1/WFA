@@ -45,7 +45,7 @@ export default function App() {
     sessionStorage.setItem(WARNING_KEY, 'true');
     setWarningAccepted(true);
     setHoldLoading(true);
-    setTimeout(() => setHoldLoading(false), 4000);
+    setTimeout(() => setHoldLoading(false), 5000);
   };
 
   const handleRefresh = () => fetchRecommendations(true);

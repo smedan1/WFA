@@ -62,33 +62,59 @@ interface RedditPost {
   created_utc: number;
 }
 
-declare function setTimeout(callback: () => void, ms?: number): unknown;
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 async function fetchPage(basePath: string, limit: number, after?: string): Promise<{ posts: RedditPost[]; nextAfter: string | null }> {
   const sep = basePath.includes('?') ? '&' : '?';
   let url = `https://old.reddit.com/r/${SUBREDDIT}/${basePath}${sep}limit=${limit}`;
   if (after) url += `&after=${after}`;
-  try {
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': USER_AGENT,
-        'Accept': 'application/json',
-      },
-    });
-    console.log(`[WallstreetAgent] GET ${basePath} after=${after ?? 'start'} → ${res.status}`);
-    if (!res.ok) {
-      const body = await res.text();
-      console.warn(`[WallstreetAgent] Non-OK response body (first 200): ${body.slice(0, 200)}`);
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent': USER_AGENT,
+          'Accept': 'application/json',
+        },
+      });
+      console.log(`[WallstreetAgent] GET ${basePath} after=${after ?? 'start'} → ${res.status}${attempt > 0 ? ` (attempt ${attempt + 1})` : ''}`);
+
+      if (res.status === 429) {
+        const retryAfterHeader = res.headers.get('retry-after');
+        let delayMs = 3000;
+        if (retryAfterHeader) {
+          const seconds = parseInt(retryAfterHeader, 10);
+          if (!isNaN(seconds)) {
+            delayMs = Math.max(3000, seconds * 1000);
+          } else {
+            const retryDate = new Date(retryAfterHeader).getTime();
+            if (!isNaN(retryDate)) {
+              delayMs = Math.max(3000, retryDate - Date.now());
+            }
+          }
+        }
+        console.warn(`[WallstreetAgent] 429 rate-limited — waiting ${delayMs}ms before retry`);
+        await sleep(delayMs);
+        continue;
+      }
+
+      if (!res.ok) {
+        const body = await res.text();
+        console.warn(`[WallstreetAgent] Non-OK response body (first 200): ${body.slice(0, 200)}`);
+        return { posts: [], nextAfter: null };
+      }
+
+      const json = await res.json() as { data?: { children?: { data: RedditPost }[]; after?: string | null } };
+      const posts = (json.data?.children ?? []).map((c) => c.data);
+      return { posts, nextAfter: json.data?.after ?? null };
+    } catch (e) {
+      console.error(`[WallstreetAgent] Fetch error for ${basePath}:`, e);
       return { posts: [], nextAfter: null };
     }
-    const json = await res.json() as { data?: { children?: { data: RedditPost }[]; after?: string | null } };
-    const posts = (json.data?.children ?? []).map((c) => c.data);
-    return { posts, nextAfter: json.data?.after ?? null };
-  } catch (e) {
-    console.error(`[WallstreetAgent] Fetch error for ${basePath}:`, e);
-    return { posts: [], nextAfter: null };
   }
+
+  console.warn(`[WallstreetAgent] Giving up on ${basePath} after=${after ?? 'start'} after 3 attempts`);
+  return { posts: [], nextAfter: null };
 }
 
 async function fetchPosts(basePath: string): Promise<RedditPost[]> {
