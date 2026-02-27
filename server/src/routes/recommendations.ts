@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import NodeCache from 'node-cache';
-import type { RecommendationsResponse } from '../types/index.js';
+import type { RecommendationsResponse, StockRecommendation } from '../types/index.js';
 import { getAgents } from '../agents/registry.js';
 
 export const recommendationsRouter = Router();
@@ -32,7 +32,7 @@ async function doFetchRecommendations(): Promise<RecommendationsResponse> {
     };
   };
 
-  let [buy, sell] = await Promise.all([
+  let [buy, sell]: [StockRecommendation[], StockRecommendation[]] = await Promise.all([
     Promise.all(rawBuy.map(enrichStock)),
     Promise.all(rawSell.map(enrichStock)),
   ]);
