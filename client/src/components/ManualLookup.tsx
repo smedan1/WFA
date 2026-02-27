@@ -1,4 +1,27 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+
+const ANALYSIS_MESSAGES = [
+  'Bribing a Wall Street analyst for a hot tip...',
+  'Calculating the ratio of hopium to fundamentals...',
+  'Sifting through 10-Ks so you don\'t have to...',
+  'Confirming the CEO hasn\'t fled to a non-extradition country...',
+  'Running discounted cash flow model on vibes...',
+  'Googling what P/E ratio means, again...',
+  'Consulting the ancient prophecies of Yahoo Finance...',
+  'Stress-testing earnings estimates with a coin flip...',
+  'Verifying the CFO is still on speaking terms with the auditors...',
+  'Running the numbers through our proprietary guessing engine...',
+  'Reading the SEC filing footnotes nobody reads...',
+  'Computing the ratio of hype to actual revenue...',
+  'Asking Reddit, then immediately ignoring what they said...',
+  'Squinting at the balance sheet until it makes sense...',
+  'Cross-referencing insider trades with suspicious yacht purchases...',
+  'Checking if the moon phase is bullish or bearish...',
+  'Confirming this company sells something other than hope...',
+  'Calculating how many Wendy\'s shifts this could cost you...',
+  'Locating the earnings guidance buried on page 47...',
+  'Determining if the stock price reflects reality or enthusiasm...',
+];
 import type { StockAnalysis } from '../types';
 import { api } from '../api/client';
 import { StockChart } from './StockChart';
@@ -26,7 +49,17 @@ export function ManualLookup() {
   const [result, setResult] = useState<StockAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [msgIndex, setMsgIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!loading) return;
+    setMsgIndex(Math.floor(Math.random() * ANALYSIS_MESSAGES.length));
+    const id = setInterval(() => {
+      setMsgIndex((i) => (i + 1) % ANALYSIS_MESSAGES.length);
+    }, 5000);
+    return () => clearInterval(id);
+  }, [loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,7 +121,7 @@ export function ManualLookup() {
       {loading && (
         <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-8 text-center space-y-3">
           <div className="mx-auto h-8 w-8 rounded-full border-2 border-yellow-500/30 border-t-yellow-500 animate-spin" />
-          <p className="text-xs text-gray-500 font-mono">Consulting the BasicFinancialsAgent...</p>
+          <p className="text-xs text-gray-500 font-mono">{ANALYSIS_MESSAGES[msgIndex]}</p>
         </div>
       )}
 
