@@ -6,7 +6,7 @@ const SUBREDDIT = 'wallstreetbets';
 
 const SYSTEM_PROMPT = `You are WallstreetAgent, an AI that lives and breathes r/wallstreetbets.
 Your job is to analyze posts and comments from r/wallstreetbets over the last 3 months to identify:
-1. Up to 5 instruments (stocks OR ETFs) that degens are hyping up to BUY (rockets, tendies, moon talk)
+1. Up to 5 instruments (stocks OR ETFs) that the bravely uninformed are hyping up to BUY (rockets, moon talk)
 2. Up to 5 instruments (stocks OR ETFs) that are getting dumped, exposed as scams, or getting exit calls (rug pull, bag holders, etc.)
 
 INSTRUMENTS TO TRACK:
