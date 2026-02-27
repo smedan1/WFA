@@ -16,6 +16,8 @@ export default function App() {
   const [recommendations, setRecommendations] = useState<RecommendationsResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Keeps loading screen visible for at least 4s after the disclaimer is dismissed
+  const [holdLoading, setHoldLoading] = useState(false);
 
   const fetchRecommendations = useCallback(async (forceRefresh = false) => {
     setLoading(true);
@@ -42,6 +44,8 @@ export default function App() {
   const handleAcceptWarning = () => {
     sessionStorage.setItem(WARNING_KEY, 'true');
     setWarningAccepted(true);
+    setHoldLoading(true);
+    setTimeout(() => setHoldLoading(false), 4000);
   };
 
   const handleRefresh = () => fetchRecommendations(true);
@@ -60,15 +64,15 @@ export default function App() {
 
       <main className="mx-auto max-w-screen-2xl px-4 py-8 space-y-10">
         {/* Top buy/sell panels */}
-        {!recommendations && loading && (
+        {((!recommendations && loading) || holdLoading) && (
           <LoadingState />
         )}
 
-        {error && !loading && (
+        {error && !loading && !holdLoading && (
           <ErrorState message={error} />
         )}
 
-        {recommendations && (
+        {recommendations && !holdLoading && (
           <>
             {/* Historical data banner */}
             {recommendations.fromHistory && (

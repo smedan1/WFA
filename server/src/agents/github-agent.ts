@@ -32,8 +32,10 @@ export class GithubAgent {
       return;
     }
 
-    const date = recommendations.timestamp.split('T')[0];
-    const filePath = `data/recommendations/${date}.json`;
+    const ts = new Date(recommendations.timestamp);
+    const date = ts.toISOString().split('T')[0];
+    const hour = String(ts.getUTCHours()).padStart(2, '0');
+    const filePath = `data/recommendations/${date}-${hour}.json`;
     const content = Buffer.from(JSON.stringify(recommendations, null, 2)).toString('base64');
     const url = `${GH_API}/repos/${this.repoOwner}/${this.repoName}/contents/${filePath}`;
 
@@ -124,7 +126,7 @@ export class GithubAgent {
       sorted.map(async (f) => {
         const r = await fetch(f.download_url);
         const data = await r.json() as { buy: StockRecommendation[]; sell: StockRecommendation[]; timestamp: string };
-        return { date: f.name.replace('.json', ''), buy: data.buy, sell: data.sell };
+        return { date: f.name.replace('.json', '').slice(0, 10), buy: data.buy, sell: data.sell };
       })
     );
 
