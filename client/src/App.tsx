@@ -64,7 +64,7 @@ export default function App() {
 
       <main className="mx-auto max-w-screen-2xl px-4 py-8 space-y-10">
         {/* Top buy/sell panels */}
-        {((!recommendations && loading) || holdLoading) && (
+        {(loading || holdLoading) && (
           <LoadingState />
         )}
 
@@ -72,7 +72,7 @@ export default function App() {
           <ErrorState message={error} />
         )}
 
-        {recommendations && !holdLoading && (
+        {recommendations && !loading && !holdLoading && (
           <>
             {/* Historical data banner */}
             {recommendations.fromHistory && (

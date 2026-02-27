@@ -1,3 +1,8 @@
+import { useState, useEffect } from 'react';
+
+// Must match the server-side cache TTL in recommendations.ts
+const CACHE_TTL_MS = 60 * 60 * 1000;
+
 interface Props {
   lastUpdated?: string;
   fromHistory?: boolean;
@@ -7,6 +12,25 @@ interface Props {
 }
 
 export function Header({ lastUpdated, fromHistory, historicalDate, onRefresh, isLoading }: Props) {
+  const [remaining, setRemaining] = useState(0);
+
+  useEffect(() => {
+    if (!lastUpdated) return;
+    const expiresAt = new Date(lastUpdated).getTime() + CACHE_TTL_MS;
+    const tick = () => setRemaining(Math.max(0, Math.floor((expiresAt - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [lastUpdated]);
+
+  const isDisabled = isLoading || remaining > 0;
+
+  const buttonLabel = isLoading
+    ? 'Loading...'
+    : remaining > 0
+      ? `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`
+      : 'Refresh';
+
   return (
     <header className="sticky top-0 z-40 border-b border-gray-800 bg-gray-950/95 backdrop-blur-sm">
       <div className="mx-auto max-w-screen-2xl px-4 py-3 flex items-center justify-between gap-4">
@@ -34,14 +58,14 @@ export function Header({ lastUpdated, fromHistory, historicalDate, onRefresh, is
           )}
           <button
             onClick={onRefresh}
-            disabled={isLoading}
+            disabled={isDisabled}
             className={`rounded-lg px-4 py-2 text-xs font-bold font-mono uppercase tracking-wider border transition-all duration-200 ${
-              isLoading
+              isDisabled
                 ? 'cursor-not-allowed border-gray-700 bg-gray-900 text-gray-600'
                 : 'border-yellow-600/50 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 active:scale-95'
             }`}
           >
-            {isLoading ? 'Loading...' : 'Refresh'}
+            {buttonLabel}
           </button>
         </div>
       </div>
