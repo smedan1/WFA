@@ -70,7 +70,7 @@ Two Railway services from the same GitHub repo (`smedan1/WFA`):
 - No vulgar language, potty humor, or profanity in AI-generated text
 - WSB community referred to as **"the bravely uninformed"**
 - The term "tendies" is acceptable (WSB culture reference, not vulgar)
-- Loading messages: pool of 30 rotating humorous messages (cycle every 5 seconds)
+- Loading messages: pool of 20 rotating humorous messages in ManualLookup (cycle every 5 seconds)
 
 ## API routes
 | Method | Path | Description |
