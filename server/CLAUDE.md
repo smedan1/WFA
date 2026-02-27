@@ -7,7 +7,7 @@ Agents are lazy-initialized singletons via `src/agents/registry.ts`. All agents 
 
 ### WallstreetAgent (`src/agents/wallstreet-agent.ts`)
 - Fetches posts from `old.reddit.com/r/wallstreetbets` (hot + top week + top month, up to 40 each)
-- Fetches are **serialized** (not parallel), paginated 10 posts at a time via Reddit's `after` cursor, with 1s delay between every request
+- Fetches are **serialized** (not parallel), paginated 10 posts at a time via Reddit's `after` cursor, with 1s delay between every request. **Keep fetches lightweight** — Reddit's public JSON API has no OAuth and will ban IPs that look like bots. Do not parallelize, do not remove the delays, do not increase page size beyond 10.
 - On 429: reads `Retry-After` header, waits `max(3s, header value)`, retries up to 3 times
 - User-Agent: `wallace-financial-agent-humour-personal-pet-project:1.1 (by /u/ArenaClowner)`
 - Deduplicates posts by title, formats with age/score/comments for Claude
