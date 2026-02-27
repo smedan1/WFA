@@ -12,8 +12,8 @@ const analysisCache = new NodeCache({ stdTTL: 300 });
 // ADSK Easter egg — full result (financials + reason) cached together for 30 min
 const adskResultCache = new NodeCache({ stdTTL: 1800 });
 const ADSK_TTL_MS = 30 * 60 * 1000;
-// Stock analysis GitHub cache TTL: 24 hours
-const STOCK_ANALYSIS_TTL_MS = 24 * 60 * 60 * 1000;
+// Stock analysis GitHub cache TTL: 30 minutes (cross-client dedup window)
+const STOCK_ANALYSIS_TTL_MS = 30 * 60 * 1000;
 
 stocksRouter.get('/quote/:symbol', async (req: Request<{ symbol: string }>, res: Response) => {
   const { symbol } = req.params;

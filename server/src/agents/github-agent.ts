@@ -67,9 +67,16 @@ export class GithubAgent {
     console.log(`[GithubAgent] Saved ${filePath}`);
   }
 
+  private stockAnalysisFilename(symbol: string): string {
+    const now = new Date();
+    const date = now.toISOString().split('T')[0];
+    const hour = String(now.getUTCHours()).padStart(2, '0');
+    return `${date}-${hour}_${symbol.toUpperCase()}.json`;
+  }
+
   async saveStockAnalysis(symbol: string, result: Record<string, unknown>): Promise<void> {
     if (!this.token) return;
-    const filePath = `data/stock-analysis/${symbol.toUpperCase()}.json`;
+    const filePath = `data/stock-analysis/${this.stockAnalysisFilename(symbol)}`;
     const payload = { result, generatedAt: new Date().toISOString() };
     const content = Buffer.from(JSON.stringify(payload, null, 2)).toString('base64');
     const url = `${GH_API}/repos/${this.repoOwner}/${this.repoName}/contents/${filePath}`;
@@ -89,12 +96,13 @@ export class GithubAgent {
       const err = await res.text();
       throw new Error(`[GithubAgent] Failed to save stock analysis for ${symbol}: ${res.status} ${err}`);
     }
-    console.log(`[GithubAgent] Saved stock analysis for ${symbol.toUpperCase()}`);
+    console.log(`[GithubAgent] Saved stock analysis for ${symbol.toUpperCase()} → ${filePath}`);
   }
 
   async getStockAnalysis(symbol: string): Promise<{ result: Record<string, unknown>; generatedAt: string } | null> {
     if (!this.token) return null;
-    const url = `${GH_API}/repos/${this.repoOwner}/${this.repoName}/contents/data/stock-analysis/${symbol.toUpperCase()}.json`;
+    const filePath = `data/stock-analysis/${this.stockAnalysisFilename(symbol)}`;
+    const url = `${GH_API}/repos/${this.repoOwner}/${this.repoName}/contents/${filePath}`;
     const res = await fetch(url, { headers: this.headers });
     if (!res.ok) return null;
     const data = await res.json() as { content: string };
