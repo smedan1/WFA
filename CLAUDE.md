@@ -1,0 +1,82 @@
+# WFA — Wallace Financial Advisor
+
+## What this app does
+A humorous meme stock advisor that scrapes r/wallstreetbets, uses Claude AI to identify buy/sell picks, enriches them with real-time financial data, and presents them in a dark-themed web UI. It is entertainment only — not financial advice.
+
+Tagline: **"Wallace Financial Advisor — Powered by Artificial Conviction"**
+
+## Monorepo structure
+```
+WFA/
+  client/         React + Vite + Tailwind frontend
+  server/         Express + TypeScript backend (AI agents)
+  data/
+    recommendations/  YYYY-MM-DD.json daily snapshots (written by GithubAgent)
+```
+
+## Tech stack
+- **Client**: React 18, TypeScript, Vite 6, Tailwind CSS, JetBrains Mono font
+- **Server**: Node 18+, Express, TypeScript (ESM), Anthropic SDK (`claude-sonnet-4-6`)
+- **Deployment**: Railway — two separate services (one per workspace root)
+- **Data sources**: Reddit JSON API, Yahoo Finance v10, GitHub REST API
+
+## Deployment (Railway)
+Two Railway services from the same GitHub repo (`smedan1/WFA`):
+
+**Server service** — Root Directory: `/` (repo root)
+- `server/railway.toml`: builder=NIXPACKS, startCommand=`node server/dist/index.js`
+- Build runs `tsc` in `server/`, output to `server/dist/`
+
+**Client service** — Root Directory: `client`
+- `client/railway.toml`: buildCommand=`npm install && npm run build`, startCommand=`npx vite preview --host 0.0.0.0 --port $PORT --base=/`
+- `preview.allowedHosts: true` (boolean) in `vite.config.ts` — required for Railway
+
+## Environment variables
+
+### Server (required)
+| Variable | Description |
+|---|---|
+| `ANTHROPIC_API_KEY` | Claude API key |
+| `CORS_ORIGIN` | Comma-separated allowed origins (e.g. `https://wfaclient-production.up.railway.app`) |
+
+### Server (optional)
+| Variable | Description |
+|---|---|
+| `GITHUB_TOKEN` | Personal Access Token with repo write access — enables history saving |
+| `GITHUB_REPO_OWNER` | GitHub username (e.g. `smedan1`) |
+| `GITHUB_REPO_NAME` | Repo name (e.g. `WFA`) |
+
+### Client (optional)
+| Variable | Description |
+|---|---|
+| `VITE_API_URL` | Server public URL. Omit for local dev (Vite proxy handles `/api` → localhost:3001) |
+
+## Key design decisions
+- **No Reddit OAuth**: Uses the public `.json` Reddit API with a descriptive User-Agent. Fetches from `old.reddit.com` (less aggressive blocking than `www.reddit.com`). User-Agent format: `script:WFA:1.0 (by /u/wfa_bot)`
+- **No MCP for GitHub**: Uses GitHub REST API (Contents API PUT) directly with a PAT. The Copilot MCP endpoint (`api.githubcopilot.com/mcp/`) requires a Copilot token, not a standard PAT.
+- **Reactive server**: No scheduled jobs. Reddit is only fetched when a client requests recommendations.
+- **30-minute cache**: Recommendations are cached in-memory (`node-cache`). GitHub history save is fire-and-forget after cache miss.
+- **GitHub history fallback**: If Reddit returns 0 posts, the server falls back to the most recent daily snapshot from `data/recommendations/`. The UI shows an amber banner and "Cached data from YYYY-MM-DD" in the header.
+- **GitHub save guard**: History is only saved when Reddit returns actual picks (not when serving historical fallback data).
+
+## Tone and humor guidelines
+- Humor style: **dry wit, self-aware, sardonic** — think sharp commentary, not crude jokes
+- No vulgar language, potty humor, or profanity in AI-generated text
+- WSB community referred to as **"the bravely uninformed"**
+- The term "tendies" is acceptable (WSB culture reference, not vulgar)
+- Loading messages: pool of 30 rotating humorous messages (cycle every 4 seconds)
+
+## API routes
+| Method | Path | Description |
+|---|---|---|
+| GET | `/health` | Health check |
+| GET | `/api/recommendations` | Get buy/sell picks (cached 30 min) |
+| POST | `/api/recommendations/refresh` | Clear cache |
+| GET | `/api/stocks/quote/:symbol` | Real-time quote |
+| GET | `/api/stocks/historical/:symbol` | Historical OHLCV data |
+| GET | `/api/stocks/analyze/:symbol` | Manual stock/ETF analysis |
+
+## Git conventions
+- Commit with `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
+- Always `git pull --rebase` before push (GithubAgent auto-commits recommendation snapshots)
+- `.claude/` and `*.bak` are in `.gitignore`
