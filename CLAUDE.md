@@ -13,6 +13,7 @@ WFA/
   data/
     recommendations/  YYYY-MM-DD-HH.json hourly snapshots (written by GithubAgent)
     easter-eggs/      adsk.json — ADSK Easter egg result (reason + financials, 30-min TTL)
+    stock-analysis/   {SYMBOL}.json — manual stock analysis cache (24-hour TTL)
 ```
 
 ## Tech stack
@@ -61,6 +62,7 @@ Two Railway services from the same GitHub repo (`smedan1/WFA`):
 - **In-flight guard**: All concurrent cache-miss GET requests share a single fetch promise (`fetchInFlight`). POST `/refresh` resets it so forced refreshes always start fresh.
 - **GitHub history fallback**: If Xpoz returns 0 posts (or `XPOZ_TOKEN` is unset), the server falls back to the most recent hourly snapshot from `data/recommendations/`. The UI shows an amber banner and "Cached data from YYYY-MM-DD" in the header.
 - **GitHub save guard**: History is only saved when Xpoz returns actual picks (not when serving historical fallback data).
+- **Stock analysis GitHub cache**: Manual stock lookups (`/api/stocks/analyze/:symbol`) are saved to `data/stock-analysis/{SYMBOL}.json` on GitHub (fire-and-forget) after Claude generates the analysis. On subsequent requests, the GitHub cache is checked (TTL: 24 hours) before calling Claude again, surviving server restarts. In-memory cache (5 min) is always checked first.
 - **ADSK Easter egg**: When a user manually looks up `ADSK`, the server always returns BUY with a Claude-generated enthusiastic reason based on actual financials. The full result (financials + reason) is cached for 30 minutes in-memory and persisted to `data/easter-eggs/adsk.json` on GitHub for cross-restart persistence.
 
 ## Tone and humor guidelines

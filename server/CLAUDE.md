@@ -42,6 +42,8 @@ Agents are lazy-initialized singletons via `src/agents/registry.ts`. All agents 
 - `getRecentHistory(days)`: lists directory, sorts by filename desc, returns `date` as `YYYY-MM-DD` (hour stripped for display)
 - `saveAdskResult(result)`: saves full ADSK Easter egg result to `data/easter-eggs/adsk.json` with `generatedAt` timestamp
 - `getAdskResult()`: returns `{ result, generatedAt }` or null; used to check if cached reason is < 30 min old
+- `saveStockAnalysis(symbol, result)`: saves manual stock analysis to `data/stock-analysis/{SYMBOL}.json` with `generatedAt` timestamp
+- `getStockAnalysis(symbol)`: returns `{ result, generatedAt }` or null; used to check if cached analysis is < 24 hours old
 - Falls back gracefully (returns `[]` / `null`) if `GITHUB_TOKEN` is not set
 - **Do NOT use `api.githubcopilot.com/mcp/`** — that requires a Copilot subscription token, not a PAT
 
@@ -57,7 +59,7 @@ Flow on cache miss:
 6. Response includes `fromHistory: true` + `historicalDate` when serving fallback data
 
 ## Stocks route (`src/routes/stocks.ts`)
-Cache TTLs: quotes 15s, historical 1h, analysis 5min.
+Cache TTLs: quotes 15s, historical 1h, analysis 5min in-memory + 24h on GitHub.
 
 ADSK Easter egg (`GET /api/stocks/analyze/ADSK`):
 - Checks `adskResultCache` (30-min NodeCache) first

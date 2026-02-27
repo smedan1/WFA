@@ -12,6 +12,8 @@ const analysisCache = new NodeCache({ stdTTL: 300 });
 // ADSK Easter egg — full result (financials + reason) cached together for 30 min
 const adskResultCache = new NodeCache({ stdTTL: 1800 });
 const ADSK_TTL_MS = 30 * 60 * 1000;
+// Stock analysis GitHub cache TTL: 24 hours
+const STOCK_ANALYSIS_TTL_MS = 24 * 60 * 60 * 1000;
 
 stocksRouter.get('/quote/:symbol', async (req: Request<{ symbol: string }>, res: Response) => {
   const { symbol } = req.params;
@@ -107,6 +109,18 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
       return res.json(freshResult);
     }
 
+    // Check GitHub cache (survives server restarts) before burning AI tokens
+    const saved = await github.getStockAnalysis(key).catch(() => null);
+    if (saved) {
+      const ageMs = Date.now() - new Date(saved.generatedAt).getTime();
+      if (ageMs < STOCK_ANALYSIS_TTL_MS) {
+        const remaining = Math.floor((STOCK_ANALYSIS_TTL_MS - ageMs) / 1000);
+        analysisCache.set(key, saved.result, Math.min(remaining, 300));
+        console.log(`[stocks] Serving cached analysis for ${key} from GitHub (age: ${Math.floor(ageMs / 3600000)}h)`);
+        return res.json(saved.result);
+      }
+    }
+
     const [analysis, quote, hist] = await Promise.allSettled([
       basicFinancials.analyzeStock(key),
       quotes.getQuote(key),
@@ -120,6 +134,9 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
     };
 
     analysisCache.set(key, result);
+    github.saveStockAnalysis(key, result as unknown as Record<string, unknown>).catch((e: Error) =>
+      console.warn(`[stocks] Failed to save analysis for ${key} to GitHub:`, e.message)
+    );
     return res.json(result);
   } catch (err) {
     return res.status(500).json({ error: `Failed to analyze ${symbol}`, message: String(err) });

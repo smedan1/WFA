@@ -67,6 +67,41 @@ export class GithubAgent {
     console.log(`[GithubAgent] Saved ${filePath}`);
   }
 
+  async saveStockAnalysis(symbol: string, result: Record<string, unknown>): Promise<void> {
+    if (!this.token) return;
+    const filePath = `data/stock-analysis/${symbol.toUpperCase()}.json`;
+    const payload = { result, generatedAt: new Date().toISOString() };
+    const content = Buffer.from(JSON.stringify(payload, null, 2)).toString('base64');
+    const url = `${GH_API}/repos/${this.repoOwner}/${this.repoName}/contents/${filePath}`;
+
+    let sha: string | undefined;
+    const existing = await fetch(url, { headers: this.headers });
+    if (existing.ok) {
+      const data = await existing.json() as { sha: string };
+      sha = data.sha;
+    }
+
+    const body: Record<string, string> = { message: `chore: cache stock analysis for ${symbol.toUpperCase()}`, content };
+    if (sha) body.sha = sha;
+
+    const res = await fetch(url, { method: 'PUT', headers: this.headers, body: JSON.stringify(body) });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`[GithubAgent] Failed to save stock analysis for ${symbol}: ${res.status} ${err}`);
+    }
+    console.log(`[GithubAgent] Saved stock analysis for ${symbol.toUpperCase()}`);
+  }
+
+  async getStockAnalysis(symbol: string): Promise<{ result: Record<string, unknown>; generatedAt: string } | null> {
+    if (!this.token) return null;
+    const url = `${GH_API}/repos/${this.repoOwner}/${this.repoName}/contents/data/stock-analysis/${symbol.toUpperCase()}.json`;
+    const res = await fetch(url, { headers: this.headers });
+    if (!res.ok) return null;
+    const data = await res.json() as { content: string };
+    const json = JSON.parse(Buffer.from(data.content, 'base64').toString('utf-8')) as { result: Record<string, unknown>; generatedAt: string };
+    return json;
+  }
+
   async saveAdskResult(result: Record<string, unknown>): Promise<void> {
     if (!this.token) return;
     const filePath = 'data/easter-eggs/adsk.json';
