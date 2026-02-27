@@ -6,8 +6,8 @@ import { getAgents } from '../agents/registry.js';
 
 export const recommendationsRouter = Router();
 
-// Cache for 10 minutes — Reddit scraping is expensive
-const cache = new NodeCache({ stdTTL: 600 });
+// Cache for 15 minutes — Reddit scraping is expensive
+const cache = new NodeCache({ stdTTL: 900 });
 const CACHE_KEY = 'recommendations';
 
 recommendationsRouter.get('/', async (_req: Request, res: Response) => {
@@ -48,12 +48,14 @@ recommendationsRouter.get('/', async (_req: Request, res: Response) => {
 
     cache.set(CACHE_KEY, result);
 
-    // Fire-and-forget: persist to GitHub without blocking the response
-    github.saveRecommendations({
-      buy,
-      sell,
-      timestamp: result.lastUpdated,
-    }).catch((e) => console.warn('[recommendations] GithubAgent save failed:', e.message));
+    // Fire-and-forget: persist to GitHub without blocking the response (skip if no data)
+    if (buy.length > 0 || sell.length > 0) {
+      github.saveRecommendations({
+        buy,
+        sell,
+        timestamp: result.lastUpdated,
+      }).catch((e) => console.warn('[recommendations] GithubAgent save failed:', e.message));
+    }
 
     return res.json(result);
   } catch (err) {
