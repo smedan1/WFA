@@ -76,11 +76,16 @@ export function ManualLookup() {
       const lastDay = data[data.length - 1].date.split('T')[0];
       return data.filter((d) => d.date.startsWith(lastDay));
     }
+    if (range === '1M' && result?.shortHistoricalData?.length) {
+      // Use hourly data for 1M — ~130 bars vs ~21 daily bars
+      const cutoffStr = getDailyCutoff('1M');
+      return result.shortHistoricalData.filter((d) => d.date >= cutoffStr);
+    }
     if (!result?.historicalData) return [];
     if (range === 'All') return result.historicalData;
     const cutoffStr = getDailyCutoff(range);
     return result.historicalData.filter((d) => d.date >= cutoffStr);
-  }, [result?.historicalData, result?.intradayData, range]);
+  }, [result?.historicalData, result?.shortHistoricalData, result?.intradayData, range]);
 
   useEffect(() => {
     if (!loading) return;

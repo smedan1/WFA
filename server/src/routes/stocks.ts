@@ -85,10 +85,11 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
 
       // 3. Cache miss — fetch fresh data, generate new reason, save full result
       console.log('[ADSK] Generating fresh Easter egg result via Claude');
-      const [analysis, quote, hist, intraday] = await Promise.allSettled([
+      const [analysis, quote, hist, shortHist, intraday] = await Promise.allSettled([
         basicFinancials.analyzeStock(key),
         quotes.getQuote(key),
         historical.getHistoricalPrices(key, '5y', '1d'),
+        historical.getHistoricalPrices(key, '3mo', '1h', true),
         historical.getHistoricalPrices(key, '5d', '5m', true),
       ]);
 
@@ -96,6 +97,7 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
         ...(analysis.status === 'fulfilled' ? analysis.value : { symbol: key, recommendation: 'SELL', reason: 'Data unavailable', financials: { symbol: key } }),
         quote: quote.status === 'fulfilled' ? quote.value : null,
         historicalData: hist.status === 'fulfilled' ? hist.value : [],
+        shortHistoricalData: shortHist.status === 'fulfilled' ? shortHist.value : [],
         intradayData: intraday.status === 'fulfilled' ? intraday.value : [],
         generatedAt: new Date().toISOString(),
       };
@@ -125,10 +127,11 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
       }
     }
 
-    const [analysis, quote, hist, intraday] = await Promise.allSettled([
+    const [analysis, quote, hist, shortHist, intraday] = await Promise.allSettled([
       basicFinancials.analyzeStock(key),
       quotes.getQuote(key),
       historical.getHistoricalPrices(key, '5y', '1d'),
+      historical.getHistoricalPrices(key, '3mo', '1h', true),
       historical.getHistoricalPrices(key, '5d', '5m', true),
     ]);
 
@@ -136,6 +139,7 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
       ...(analysis.status === 'fulfilled' ? analysis.value : { symbol: key, recommendation: 'SELL', reason: 'Data unavailable', financials: { symbol: key } }),
       quote: quote.status === 'fulfilled' ? quote.value : null,
       historicalData: hist.status === 'fulfilled' ? hist.value : [],
+      shortHistoricalData: shortHist.status === 'fulfilled' ? shortHist.value : [],
       intradayData: intraday.status === 'fulfilled' ? intraday.value : [],
       generatedAt: new Date().toISOString(),
     };

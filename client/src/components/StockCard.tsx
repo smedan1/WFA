@@ -140,7 +140,7 @@ export function StockCard({ stock, rank, onSelect }: Props) {
                 <button
                   key={r}
                   onClick={(e) => { e.stopPropagation(); setRange(r); }}
-                  className={`text-[10px] font-bold font-mono transition-colors ${
+                  className={`px-2 py-1 text-[10px] font-bold font-mono transition-colors ${
                     range === r
                       ? isBuy ? 'text-buy' : 'text-sell'
                       : 'text-gray-700 hover:text-gray-500'

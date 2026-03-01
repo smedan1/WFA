@@ -87,6 +87,7 @@ export interface StockAnalysis {
   financials: BasicFinancials;
   quote?: StockQuote;
   historicalData?: HistoricalDataPoint[];
+  shortHistoricalData?: HistoricalDataPoint[];
   intradayData?: HistoricalDataPoint[];
   generatedAt?: string;
 }
