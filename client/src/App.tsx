@@ -99,9 +99,6 @@ export default function App() {
                 <h2 className="text-base font-bold font-mono text-white uppercase tracking-wider">
                   Top {recommendations.buy.length} Meme Stocks & ETFs to Buy Now
                 </h2>
-                <span className="rounded-full bg-buy-bg border border-buy-border px-2.5 py-0.5 text-xs font-bold font-mono text-buy">
-                  {recommendations.buy.length}
-                </span>
               </div>
 
               {recommendations.buy.length === 0 ? (
@@ -129,9 +126,6 @@ export default function App() {
                 <h2 className="text-base font-bold font-mono text-white uppercase tracking-wider">
                   Top {recommendations.sell.length} Meme Stocks & ETFs to Sell NOW
                 </h2>
-                <span className="rounded-full bg-sell-bg border border-sell-border px-2.5 py-0.5 text-xs font-bold font-mono text-sell">
-                  {recommendations.sell.length}
-                </span>
               </div>
 
               {recommendations.sell.length === 0 ? (
