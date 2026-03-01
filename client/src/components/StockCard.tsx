@@ -75,7 +75,7 @@ export function StockCard({ stock, rank, onSelect }: Props) {
 
   return (
     <div
-      className={`relative rounded-xl border bg-surface-card p-4 transition-all duration-300 ${onSelect ? 'cursor-pointer' : ''} ${borderClass}`}
+      className={`group relative rounded-xl border bg-surface-card p-4 transition-all duration-300 ${onSelect ? 'cursor-pointer active:scale-[0.98]' : ''} ${borderClass}`}
       onClick={onSelect}
     >
       {/* Rank badge */}
@@ -185,11 +185,16 @@ export function StockCard({ stock, rank, onSelect }: Props) {
         <p className="mt-1">{stock.reason}</p>
       </div>
 
-      {/* Post count hint */}
-      {postCount > 0 && (
-        <p className="mt-2 text-right text-xs text-gray-700 font-mono">
-          {postCount} contributing post{postCount !== 1 ? 's' : ''} ↗
-        </p>
+      {/* Clickability hint */}
+      {onSelect && (
+        <div className="mt-2 flex items-center justify-end gap-1.5">
+          {postCount > 0 && (
+            <span className="text-xs text-gray-700 font-mono">
+              {postCount} contributing post{postCount !== 1 ? 's' : ''}
+            </span>
+          )}
+          <span className={`text-sm transition-colors ${isBuy ? 'text-buy-border group-hover:text-buy' : 'text-sell-border group-hover:text-sell'}`}>›</span>
+        </div>
       )}
     </div>
   );
