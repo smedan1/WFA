@@ -11,6 +11,7 @@ import type { HistoricalDataPoint } from '../types';
 interface Props {
   data: HistoricalDataPoint[];
   type: 'BUY' | 'SELL';
+  height?: number;
 }
 
 interface TooltipProps {
@@ -29,7 +30,7 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
   );
 }
 
-export function StockChart({ data, type }: Props) {
+export function StockChart({ data, type, height = 80 }: Props) {
   if (!data || data.length === 0) {
     return (
       <div className="flex h-20 items-center justify-center text-xs text-gray-600 font-mono">
@@ -51,7 +52,7 @@ export function StockChart({ data, type }: Props) {
   const maxPrice = Math.max(...prices) * 1.02;
 
   return (
-    <ResponsiveContainer width="100%" height={80}>
+    <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={chartData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">

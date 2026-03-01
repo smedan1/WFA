@@ -88,7 +88,7 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
       const [analysis, quote, hist] = await Promise.allSettled([
         basicFinancials.analyzeStock(key),
         quotes.getQuote(key),
-        historical.getHistoricalPrices(key, '3mo', '1d'),
+        historical.getHistoricalPrices(key, '2y', '1d'),
       ]);
 
       const freshResult = {
@@ -126,7 +126,7 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
     const [analysis, quote, hist] = await Promise.allSettled([
       basicFinancials.analyzeStock(key),
       quotes.getQuote(key),
-      historical.getHistoricalPrices(key, '3mo', '1d'),
+      historical.getHistoricalPrices(key, '2y', '1d'),
     ]);
 
     const result = {

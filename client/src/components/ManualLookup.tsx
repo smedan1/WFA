@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 
 const ANALYSIS_MESSAGES = [
   'Bribing a Wall Street analyst for a hot tip...',
@@ -50,7 +50,23 @@ export function ManualLookup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [msgIndex, setMsgIndex] = useState(0);
+  const [range, setRange] = useState<'3M' | '6M' | '1Y' | '2Y'>('1Y');
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const RANGES: Array<{ label: '3M' | '6M' | '1Y' | '2Y'; days: number }> = [
+    { label: '3M', days: 90 },
+    { label: '6M', days: 180 },
+    { label: '1Y', days: 365 },
+    { label: '2Y', days: 730 },
+  ];
+
+  const filteredHistory = useMemo(() => {
+    if (!result?.historicalData) return [];
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - RANGES.find((r) => r.label === range)!.days);
+    const cutoffStr = cutoff.toISOString().split('T')[0];
+    return result.historicalData.filter((d) => d.date >= cutoffStr);
+  }, [result?.historicalData, range]);
 
   useEffect(() => {
     if (!loading) return;
@@ -178,7 +194,22 @@ export function ManualLookup() {
           {/* Chart */}
           {result.historicalData && result.historicalData.length > 0 && (
             <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-3">
-              <StockChart data={result.historicalData} type={result.recommendation} />
+              <div className="flex justify-end gap-1 mb-2">
+                {RANGES.map((r) => (
+                  <button
+                    key={r.label}
+                    onClick={() => setRange(r.label)}
+                    className={`px-2.5 py-0.5 text-xs font-bold font-mono rounded transition-colors ${
+                      range === r.label
+                        ? isBuy ? 'bg-buy-bg border border-buy-border text-buy' : 'bg-sell-bg border border-sell-border text-sell'
+                        : 'text-gray-600 hover:text-gray-400'
+                    }`}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+              <StockChart data={filteredHistory} type={result.recommendation} height={200} />
             </div>
           )}
 
