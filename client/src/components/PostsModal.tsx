@@ -76,6 +76,11 @@ export function PostsModal({ stock, onClose }: Props) {
                   )}
                 </div>
                 <p className="text-sm text-gray-200 leading-relaxed">{post.title}</p>
+                {post.body && (
+                  <p className="text-xs text-gray-500 leading-relaxed mt-1.5 line-clamp-3">
+                    {post.body.length > 400 ? post.body.slice(0, 400) + '…' : post.body}
+                  </p>
+                )}
                 {post.url && (
                   <a
                     href={post.url}

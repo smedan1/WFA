@@ -5,6 +5,7 @@ export interface SourcePost {
   createdUtc: number;
   url?: string;
   author?: string;
+  body?: string;
 }
 
 export interface StockRecommendation {

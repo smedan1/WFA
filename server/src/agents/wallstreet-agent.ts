@@ -65,6 +65,7 @@ interface RedditPost {
   created_utc: number;
   url?: string;
   author?: string;
+  selfText?: string;
 }
 
 // 1000ms between Xpoz calls — no QPM limit, just polite spacing
@@ -174,6 +175,11 @@ function parseXpozText(text: string): RedditPost[] {
 
     const url = get('url');
     const author = get('author');
+    const rawSelftext = get('selftext');
+    const selfText =
+      rawSelftext && rawSelftext !== 'null' && rawSelftext !== '[removed]' && rawSelftext !== '[deleted]'
+        ? rawSelftext.trim() || undefined
+        : undefined;
     posts.push({
       title: get('title'),
       score: parseInt(get('score'), 10) || 0,
@@ -181,6 +187,7 @@ function parseXpozText(text: string): RedditPost[] {
       created_utc,
       url: url && url !== 'null' ? url : undefined,
       author: author && author !== 'null' ? author : undefined,
+      selfText,
     });
     rowsParsed++;
   }
@@ -194,7 +201,7 @@ async function fetchXpozPosts(sort: string, time?: string): Promise<RedditPost[]
       query: WSB_QUERY,
       subreddit: SUBREDDIT,
       sort,
-      fields: ['title', 'score', 'commentsCount', 'createdAtTimestamp', 'url', 'author'],
+      fields: ['title', 'selftext', 'score', 'commentsCount', 'createdAtTimestamp', 'url', 'author'],
       responseType: 'fast',
     };
     if (time) args.time = time;
@@ -245,7 +252,12 @@ export class WallstreetAgent {
     const postSummary = posts
       .map((p) => {
         const daysAgo = Math.floor((nowSec - p.created_utc) / 86400);
-        return `[${daysAgo}d ago, score:${p.score}, comments:${p.num_comments}] ${p.title}`;
+        const header = `[${daysAgo}d ago, score:${p.score}, comments:${p.num_comments}] ${p.title}`;
+        if (p.selfText) {
+          const body = p.selfText.replace(/\n+/g, ' ').slice(0, 300);
+          return `${header}\n  > ${body}${p.selfText.length > 300 ? '...' : ''}`;
+        }
+        return header;
       })
       .join('\n');
 
@@ -282,6 +294,7 @@ export class WallstreetAgent {
             createdUtc: p.created_utc,
             url: p.url,
             author: p.author,
+            body: p.selfText,
           }));
         return { ...pick, sourcePosts };
       });
