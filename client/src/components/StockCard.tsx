@@ -189,7 +189,7 @@ export function StockCard({ stock, rank, onSelect }: Props) {
       {onSelect && (
         <div className="mt-2 flex items-center justify-end gap-1.5">
           {postCount > 0 && (
-            <span className="text-xs text-gray-700 font-mono">
+            <span className="text-xs text-gray-700 group-hover:text-gray-500 transition-colors font-mono">
               {postCount} contributing post{postCount !== 1 ? 's' : ''}
             </span>
           )}
