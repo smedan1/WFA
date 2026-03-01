@@ -42,6 +42,7 @@ export interface StockRecommendation {
   sourcePosts?: SourcePost[];
   quote?: StockQuote;
   historicalData?: HistoricalDataPoint[];
+  intradayData?: HistoricalDataPoint[];
 }
 
 export interface RecommendationsResponse {

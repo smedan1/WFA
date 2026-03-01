@@ -21,14 +21,16 @@ async function doFetchRecommendations(): Promise<RecommendationsResponse> {
 
   // Step 2: Enrich with real-time quotes and historical data in parallel
   const enrichStock = async (stock: typeof rawBuy[number]) => {
-    const [quote, historicalData] = await Promise.allSettled([
+    const [quote, historicalData, intradayData] = await Promise.allSettled([
       quotes.getQuote(stock.symbol),
       historical.getHistoricalPrices(stock.symbol, '3mo', '1d'),
+      historical.getHistoricalPrices(stock.symbol, '5d', '1h', true),
     ]);
     return {
       ...stock,
       quote: quote.status === 'fulfilled' ? quote.value : undefined,
       historicalData: historicalData.status === 'fulfilled' ? historicalData.value : undefined,
+      intradayData: intradayData.status === 'fulfilled' ? intradayData.value : undefined,
     };
   };
 

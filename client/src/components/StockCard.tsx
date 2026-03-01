@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import type { StockRecommendation } from '../types';
 import { StockChart } from './StockChart';
 
@@ -34,9 +35,28 @@ function PopularityBar({ score }: { score: number }) {
   );
 }
 
+const CARD_RANGES = ['1D', '5D', '1M', '3M'] as const;
+type CardRange = typeof CARD_RANGES[number];
+
 export function StockCard({ stock, rank, onSelect }: Props) {
   const isBuy = stock.recommendation === 'BUY';
   const quote = stock.quote;
+  const [range, setRange] = useState<CardRange>('3M');
+
+  const chartData = useMemo(() => {
+    if (range === '1D' || range === '5D') {
+      const data = stock.intradayData ?? [];
+      if (range === '5D') return data;
+      if (data.length === 0) return [];
+      const lastDay = data[data.length - 1].date.split('T')[0];
+      return data.filter((d) => d.date.startsWith(lastDay));
+    }
+    const data = stock.historicalData ?? [];
+    if (range === '3M') return data;
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - 1);
+    return data.filter((d) => d.date >= cutoff.toISOString().split('T')[0]);
+  }, [stock.historicalData, stock.intradayData, range]);
 
   const borderClass = isBuy
     ? 'border-buy-border hover:border-buy hover:shadow-[0_0_20px_rgba(34,197,94,0.12)]'
@@ -113,8 +133,25 @@ export function StockCard({ stock, rank, onSelect }: Props) {
 
       {/* Mini chart */}
       <div className="mb-3 -mx-1">
-        {stock.historicalData ? (
-          <StockChart data={stock.historicalData} type={stock.recommendation} />
+        {(stock.historicalData || stock.intradayData) ? (
+          <>
+            <div className="flex justify-end gap-2 mb-1 px-1">
+              {CARD_RANGES.map((r) => (
+                <button
+                  key={r}
+                  onClick={(e) => { e.stopPropagation(); setRange(r); }}
+                  className={`text-[10px] font-bold font-mono transition-colors ${
+                    range === r
+                      ? isBuy ? 'text-buy' : 'text-sell'
+                      : 'text-gray-700 hover:text-gray-500'
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+            <StockChart data={chartData} type={stock.recommendation} />
+          </>
         ) : (
           <div className="h-20 flex items-center justify-center text-xs text-gray-700 font-mono">
             Fetching chart...
