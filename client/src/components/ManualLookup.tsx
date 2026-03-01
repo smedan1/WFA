@@ -119,7 +119,7 @@ export function ManualLookup() {
         Analyze a Stock
       </h2>
       <p className="mb-5 text-xs text-gray-500 font-mono">
-        Enter a ticker symbol to get a fundamental analysis and BUY/SELL recommendation.
+        Drop a ticker. Get a confident verdict from someone who learned finance from Reddit.
       </p>
 
       {/* Search form */}
