@@ -76,7 +76,7 @@ export function StockChart({ data, type, height = 80 }: Props) {
         <YAxis domain={[minPrice, maxPrice]} hide />
         <Tooltip content={<CustomTooltip />} />
         <Area
-          type="monotone"
+          type="linear"
           dataKey="close"
           stroke={color}
           strokeWidth={1.5}
