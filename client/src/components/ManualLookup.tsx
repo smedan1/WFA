@@ -50,21 +50,27 @@ export function ManualLookup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [msgIndex, setMsgIndex] = useState(0);
-  const [range, setRange] = useState<'3M' | '6M' | '1Y' | '2Y'>('1Y');
+  const [range, setRange] = useState<'1M' | '3M' | '6M' | 'YTD' | '1Y' | '2Y'>('1Y');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const RANGES: Array<{ label: '3M' | '6M' | '1Y' | '2Y'; days: number }> = [
-    { label: '3M', days: 90 },
-    { label: '6M', days: 180 },
-    { label: '1Y', days: 365 },
-    { label: '2Y', days: 730 },
-  ];
+  const RANGES: Array<'1M' | '3M' | '6M' | 'YTD' | '1Y' | '2Y'> = ['1M', '3M', '6M', 'YTD', '1Y', '2Y'];
+
+  function getRangeCutoff(r: typeof range): string {
+    const now = new Date();
+    switch (r) {
+      case '1M': now.setMonth(now.getMonth() - 1); break;
+      case '3M': now.setMonth(now.getMonth() - 3); break;
+      case '6M': now.setMonth(now.getMonth() - 6); break;
+      case 'YTD': return `${new Date().getFullYear()}-01-01`;
+      case '1Y': now.setFullYear(now.getFullYear() - 1); break;
+      case '2Y': now.setFullYear(now.getFullYear() - 2); break;
+    }
+    return now.toISOString().split('T')[0];
+  }
 
   const filteredHistory = useMemo(() => {
     if (!result?.historicalData) return [];
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - RANGES.find((r) => r.label === range)!.days);
-    const cutoffStr = cutoff.toISOString().split('T')[0];
+    const cutoffStr = getRangeCutoff(range);
     return result.historicalData.filter((d) => d.date >= cutoffStr);
   }, [result?.historicalData, range]);
 
@@ -197,15 +203,15 @@ export function ManualLookup() {
               <div className="flex justify-end gap-1 mb-2">
                 {RANGES.map((r) => (
                   <button
-                    key={r.label}
-                    onClick={() => setRange(r.label)}
+                    key={r}
+                    onClick={() => setRange(r)}
                     className={`px-2.5 py-0.5 text-xs font-bold font-mono rounded transition-colors ${
-                      range === r.label
+                      range === r
                         ? isBuy ? 'bg-buy-bg border border-buy-border text-buy' : 'bg-sell-bg border border-sell-border text-sell'
                         : 'text-gray-600 hover:text-gray-400'
                     }`}
                   >
-                    {r.label}
+                    {r}
                   </button>
                 ))}
               </div>
