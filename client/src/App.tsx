@@ -66,7 +66,7 @@ export default function App() {
         hasError={!!error}
       />
 
-      <main className="mx-auto max-w-screen-2xl px-4 py-8 space-y-10">
+      <main className="mx-auto max-w-[2400px] px-4 py-8 space-y-10">
         {/* Top buy/sell panels */}
         {(loading || holdLoading) && (
           <LoadingState />
