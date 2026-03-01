@@ -41,10 +41,14 @@ Two Railway services from the same GitHub repo (`smedan1/WFA`):
 | `ANTHROPIC_API_KEY` | Claude API key |
 | `CORS_ORIGIN` | Comma-separated allowed origins (e.g. `https://wfaclient-production.up.railway.app`) |
 
+### Server (required)
+| Variable | Description |
+|---|---|
+| `XPOZ_TOKEN` | Bearer token from xpoz.ai — required for live Reddit data. Without it and without pre-existing GitHub history, the app has no data source. |
+
 ### Server (optional)
 | Variable | Description |
 |---|---|
-| `XPOZ_TOKEN` | Bearer token from xpoz.ai — enables live Reddit data via Xpoz aggregator |
 | `GITHUB_TOKEN` | Personal Access Token with repo write access — enables history saving |
 | `GITHUB_REPO_OWNER` | GitHub username (e.g. `smedan1`) |
 | `GITHUB_REPO_NAME` | Repo name (e.g. `WFA`) |

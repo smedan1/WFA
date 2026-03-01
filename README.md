@@ -35,7 +35,7 @@ cp .env.example .env
 | Variable | Required | Description |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | Yes | Get at https://console.anthropic.com |
-| `XPOZ_TOKEN` | Recommended | Bearer token from https://xpoz.ai — enables live Reddit data. Without it, app falls back to GitHub history. |
+| `XPOZ_TOKEN` | **Yes** | Bearer token from https://xpoz.ai — required for live Reddit data. Without it and without pre-existing GitHub history, the app has no data source. |
 | `GITHUB_TOKEN` | Optional | PAT with `repo` scope — enables history saving and stock analysis cache |
 | `GITHUB_REPO_OWNER` | Optional | Your GitHub username (e.g. `smedan1`) |
 | `GITHUB_REPO_NAME` | Optional | Repo name (e.g. `WFA`) |
