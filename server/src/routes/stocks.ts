@@ -89,7 +89,7 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
         basicFinancials.analyzeStock(key),
         quotes.getQuote(key),
         historical.getHistoricalPrices(key, '5y', '1d'),
-        historical.getHistoricalPrices(key, '5d', '1h', true),
+        historical.getHistoricalPrices(key, '5d', '5m', true),
       ]);
 
       const freshResult = {
@@ -129,7 +129,7 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
       basicFinancials.analyzeStock(key),
       quotes.getQuote(key),
       historical.getHistoricalPrices(key, '5y', '1d'),
-      historical.getHistoricalPrices(key, '5d', '1h', true),
+      historical.getHistoricalPrices(key, '5d', '5m', true),
     ]);
 
     const result = {

@@ -24,7 +24,7 @@ async function doFetchRecommendations(): Promise<RecommendationsResponse> {
     const [quote, historicalData, intradayData] = await Promise.allSettled([
       quotes.getQuote(stock.symbol),
       historical.getHistoricalPrices(stock.symbol, '3mo', '1d'),
-      historical.getHistoricalPrices(stock.symbol, '5d', '1h', true),
+      historical.getHistoricalPrices(stock.symbol, '5d', '5m', true),
     ]);
     return {
       ...stock,
