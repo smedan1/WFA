@@ -39,16 +39,22 @@ export class HistoricalAgent {
     const timestamps = result.timestamp ?? [];
     const q = result.indicators?.quote?.[0] ?? {};
 
-    return timestamps.map((ts, i) => ({
-      date: includeTime
-        ? new Date(ts * 1000).toISOString().slice(0, 16)  // "YYYY-MM-DDTHH:MM"
-        : new Date(ts * 1000).toISOString().split('T')[0], // "YYYY-MM-DD"
-      open: q.open?.[i] ?? 0,
-      high: q.high?.[i] ?? 0,
-      low: q.low?.[i] ?? 0,
-      close: q.close?.[i] ?? 0,
-      volume: q.volume?.[i] ?? 0,
-    }));
+    return timestamps
+      .map((ts, i) => {
+        const close = q.close?.[i];
+        if (close == null || close === 0) return null;
+        return {
+          date: includeTime
+            ? new Date(ts * 1000).toISOString().slice(0, 16)  // "YYYY-MM-DDTHH:MM"
+            : new Date(ts * 1000).toISOString().split('T')[0], // "YYYY-MM-DD"
+          open: q.open?.[i] ?? close,
+          high: q.high?.[i] ?? close,
+          low: q.low?.[i] ?? close,
+          close,
+          volume: q.volume?.[i] ?? 0,
+        };
+      })
+      .filter((p): p is HistoricalDataPoint => p !== null);
   }
 
   async close(): Promise<void> {}
