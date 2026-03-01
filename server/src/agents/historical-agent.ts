@@ -17,7 +17,8 @@ export class HistoricalAgent {
 
   async initialize(): Promise<void> {}
 
-  async getHistoricalPrices(symbol: string, period = '3mo', interval = '1d'): Promise<HistoricalDataPoint[]> {
+  // includeTime=true stores "YYYY-MM-DDTHH:MM" (UTC) — used for intraday data
+  async getHistoricalPrices(symbol: string, period = '3mo', interval = '1d', includeTime = false): Promise<HistoricalDataPoint[]> {
     const range = PERIOD_TO_RANGE[period] ?? '3mo';
     const url = `${YF_BASE}/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
     const res = await fetch(url, { headers: HEADERS });
@@ -39,7 +40,9 @@ export class HistoricalAgent {
     const q = result.indicators?.quote?.[0] ?? {};
 
     return timestamps.map((ts, i) => ({
-      date: new Date(ts * 1000).toISOString().split('T')[0],
+      date: includeTime
+        ? new Date(ts * 1000).toISOString().slice(0, 16)  // "YYYY-MM-DDTHH:MM"
+        : new Date(ts * 1000).toISOString().split('T')[0], // "YYYY-MM-DD"
       open: q.open?.[i] ?? 0,
       high: q.high?.[i] ?? 0,
       low: q.low?.[i] ?? 0,

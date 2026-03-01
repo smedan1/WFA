@@ -85,16 +85,18 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
 
       // 3. Cache miss — fetch fresh data, generate new reason, save full result
       console.log('[ADSK] Generating fresh Easter egg result via Claude');
-      const [analysis, quote, hist] = await Promise.allSettled([
+      const [analysis, quote, hist, intraday] = await Promise.allSettled([
         basicFinancials.analyzeStock(key),
         quotes.getQuote(key),
-        historical.getHistoricalPrices(key, '2y', '1d'),
+        historical.getHistoricalPrices(key, '5y', '1d'),
+        historical.getHistoricalPrices(key, '5d', '1h', true),
       ]);
 
       const freshResult = {
         ...(analysis.status === 'fulfilled' ? analysis.value : { symbol: key, recommendation: 'SELL', reason: 'Data unavailable', financials: { symbol: key } }),
         quote: quote.status === 'fulfilled' ? quote.value : null,
         historicalData: hist.status === 'fulfilled' ? hist.value : [],
+        intradayData: intraday.status === 'fulfilled' ? intraday.value : [],
         generatedAt: new Date().toISOString(),
       };
 
@@ -123,16 +125,18 @@ stocksRouter.get('/analyze/:symbol', async (req: Request<{ symbol: string }>, re
       }
     }
 
-    const [analysis, quote, hist] = await Promise.allSettled([
+    const [analysis, quote, hist, intraday] = await Promise.allSettled([
       basicFinancials.analyzeStock(key),
       quotes.getQuote(key),
-      historical.getHistoricalPrices(key, '2y', '1d'),
+      historical.getHistoricalPrices(key, '5y', '1d'),
+      historical.getHistoricalPrices(key, '5d', '1h', true),
     ]);
 
     const result = {
       ...(analysis.status === 'fulfilled' ? analysis.value : { symbol: key, recommendation: 'SELL', reason: 'Data unavailable', financials: { symbol: key } }),
       quote: quote.status === 'fulfilled' ? quote.value : null,
       historicalData: hist.status === 'fulfilled' ? hist.value : [],
+      intradayData: intraday.status === 'fulfilled' ? intraday.value : [],
       generatedAt: new Date().toISOString(),
     };
 

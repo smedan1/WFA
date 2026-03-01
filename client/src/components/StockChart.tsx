@@ -20,11 +20,22 @@ interface TooltipProps {
   label?: string;
 }
 
+function formatTooltipLabel(label: string): string {
+  if (!label.includes('T')) return label; // already "MM-DD"
+  // "YYYY-MM-DDTHH:MM" (UTC) → "Jan 15, 09:30 ET"
+  const d = new Date(label + ':00Z');
+  return d.toLocaleString('en-US', {
+    month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+    timeZone: 'America/New_York', hour12: true,
+  }) + ' ET';
+}
+
 function CustomTooltip({ active, payload, label }: TooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded border border-gray-700 bg-gray-900 px-3 py-2 text-xs font-mono shadow-xl">
-      <p className="text-gray-400">{label}</p>
+      <p className="text-gray-400">{formatTooltipLabel(label ?? '')}</p>
       <p className="font-bold text-white">${payload[0].value.toFixed(2)}</p>
     </div>
   );
@@ -42,8 +53,9 @@ export function StockChart({ data, type, height = 80 }: Props) {
   const color = type === 'BUY' ? '#22c55e' : '#ef4444';
   const gradientId = `gradient-${type.toLowerCase()}-${Math.random().toString(36).slice(2, 7)}`;
 
+  const isIntraday = data[0]?.date.includes('T') ?? false;
   const chartData = data.map((d) => ({
-    date: d.date.slice(5), // MM-DD
+    date: isIntraday ? d.date : d.date.slice(5), // intraday: keep full "YYYY-MM-DDTHH:MM"; daily: "MM-DD"
     close: d.close,
   }));
 

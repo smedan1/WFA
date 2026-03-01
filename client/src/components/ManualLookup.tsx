@@ -50,29 +50,37 @@ export function ManualLookup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [msgIndex, setMsgIndex] = useState(0);
-  const [range, setRange] = useState<'1M' | '3M' | '6M' | 'YTD' | '1Y' | '2Y'>('1Y');
+  const [range, setRange] = useState<'1D' | '5D' | '1M' | '6M' | 'YTD' | '1Y' | '5Y' | 'All'>('1Y');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const RANGES: Array<'1M' | '3M' | '6M' | 'YTD' | '1Y' | '2Y'> = ['1M', '3M', '6M', 'YTD', '1Y', '2Y'];
+  const RANGES: Array<'1D' | '5D' | '1M' | '6M' | 'YTD' | '1Y' | '5Y' | 'All'> = ['1D', '5D', '1M', '6M', 'YTD', '1Y', '5Y', 'All'];
 
-  function getRangeCutoff(r: typeof range): string {
+  function getDailyCutoff(r: '1M' | '6M' | 'YTD' | '1Y' | '5Y'): string {
     const now = new Date();
     switch (r) {
       case '1M': now.setMonth(now.getMonth() - 1); break;
-      case '3M': now.setMonth(now.getMonth() - 3); break;
       case '6M': now.setMonth(now.getMonth() - 6); break;
       case 'YTD': return `${new Date().getFullYear()}-01-01`;
       case '1Y': now.setFullYear(now.getFullYear() - 1); break;
-      case '2Y': now.setFullYear(now.getFullYear() - 2); break;
+      case '5Y': now.setFullYear(now.getFullYear() - 5); break;
     }
     return now.toISOString().split('T')[0];
   }
 
   const filteredHistory = useMemo(() => {
+    if (range === '1D' || range === '5D') {
+      const data = result?.intradayData ?? [];
+      if (range === '5D') return data;
+      // 1D: show only the most recent trading day available
+      if (data.length === 0) return [];
+      const lastDay = data[data.length - 1].date.split('T')[0];
+      return data.filter((d) => d.date.startsWith(lastDay));
+    }
     if (!result?.historicalData) return [];
-    const cutoffStr = getRangeCutoff(range);
+    if (range === 'All') return result.historicalData;
+    const cutoffStr = getDailyCutoff(range);
     return result.historicalData.filter((d) => d.date >= cutoffStr);
-  }, [result?.historicalData, range]);
+  }, [result?.historicalData, result?.intradayData, range]);
 
   useEffect(() => {
     if (!loading) return;
@@ -198,7 +206,7 @@ export function ManualLookup() {
           </div>
 
           {/* Chart */}
-          {result.historicalData && result.historicalData.length > 0 && (
+          {filteredHistory.length > 0 && (
             <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-3">
               <div className="flex justify-end gap-1 mb-2">
                 {RANGES.map((r) => (
