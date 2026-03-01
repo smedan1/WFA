@@ -5,6 +5,8 @@ import { StockCard } from './components/StockCard';
 import { PostsModal } from './components/PostsModal';
 import { ManualLookup } from './components/ManualLookup';
 import { LoadingState, CardSkeleton, ErrorState } from './components/LoadingState';
+import { MobileBottomNav } from './components/MobileBottomNav';
+import type { MobileTab } from './components/MobileBottomNav';
 import { api } from './api/client';
 import type { RecommendationsResponse, StockRecommendation } from './types';
 
@@ -20,6 +22,7 @@ export default function App() {
   // Keeps loading screen visible for at least 4s after the disclaimer is dismissed
   const [holdLoading, setHoldLoading] = useState(false);
   const [selectedStock, setSelectedStock] = useState<StockRecommendation | null>(null);
+  const [mobileTab, setMobileTab] = useState<MobileTab>('buy');
 
   const fetchRecommendations = useCallback(async (forceRefresh = false) => {
     setLoading(true);
@@ -52,6 +55,8 @@ export default function App() {
 
   const handleRefresh = () => fetchRecommendations(true);
 
+  const isContentLoading = loading || holdLoading;
+
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
       {!warningAccepted && <WarningModal onAccept={handleAcceptWarning} />}
@@ -66,19 +71,16 @@ export default function App() {
         hasError={!!error}
       />
 
-      <main className="mx-auto max-w-[2400px] px-4 py-8 space-y-10">
-        {/* Top buy/sell panels */}
-        {(loading || holdLoading) && (
-          <LoadingState />
-        )}
+      {/* ─── Desktop layout (sm and above) ─────────────────────────────── */}
+      <main className="hidden sm:block mx-auto max-w-[2400px] px-4 py-8 space-y-10">
+        {isContentLoading && <LoadingState />}
 
-        {error && !loading && !holdLoading && (
+        {error && !isContentLoading && (
           <ErrorState message={error} />
         )}
 
-        {recommendations && !loading && !holdLoading && (
+        {recommendations && !isContentLoading && (
           <>
-            {/* Historical data banner */}
             {recommendations.fromHistory && (
               <div className="rounded-xl border border-yellow-700/50 bg-yellow-950/30 px-5 py-3 flex items-center gap-3">
                 <span className="text-yellow-400 text-lg">⚠</span>
@@ -160,6 +162,83 @@ export default function App() {
           </p>
         </footer>
       </main>
+
+      {/* ─── Mobile layout (below sm) ──────────────────────────────────── */}
+      <div className="sm:hidden flex flex-col">
+        {/* Historical data banner */}
+        {recommendations?.fromHistory && !isContentLoading && (
+          <div className="mx-3 mt-3 rounded-lg border border-yellow-700/50 bg-yellow-950/30 px-4 py-2 flex items-center gap-2">
+            <span className="text-yellow-400 text-sm">⚠</span>
+            <p className="text-xs font-mono text-yellow-300">
+              Cached data from{' '}
+              <span className="font-bold">{recommendations.historicalDate}</span>
+            </p>
+          </div>
+        )}
+
+        {/* Scrollable tab content — pb-20 clears the fixed bottom nav */}
+        <div className="px-3 pt-3 pb-20 space-y-3">
+          {/* LOOKUP tab: always available regardless of loading state */}
+          {mobileTab === 'analyze' && <ManualLookup />}
+
+          {/* BUY / SELL tabs */}
+          {mobileTab !== 'analyze' && (
+            <>
+              {isContentLoading && <LoadingState />}
+
+              {error && !isContentLoading && <ErrorState message={error} />}
+
+              {recommendations && !isContentLoading && (
+                <>
+                  {mobileTab === 'buy' && (
+                    recommendations.buy.length === 0 ? (
+                      <div className="rounded-xl border border-gray-800 bg-surface-card p-8 text-center">
+                        <p className="text-sm text-gray-500 font-mono">
+                          Not enough WSB hype to recommend buys right now. Probably a good sign.
+                        </p>
+                      </div>
+                    ) : (
+                      recommendations.buy.map((stock, i) => (
+                        <StockCard
+                          key={stock.symbol}
+                          stock={stock}
+                          rank={i + 1}
+                          onSelect={() => setSelectedStock(stock)}
+                        />
+                      ))
+                    )
+                  )}
+
+                  {mobileTab === 'sell' && (
+                    recommendations.sell.length === 0 ? (
+                      <div className="rounded-xl border border-gray-800 bg-surface-card p-8 text-center">
+                        <p className="text-sm text-gray-500 font-mono">No active exit signals. Stay alert.</p>
+                      </div>
+                    ) : (
+                      recommendations.sell.map((stock, i) => (
+                        <StockCard
+                          key={stock.symbol}
+                          stock={stock}
+                          rank={i + 1}
+                          onSelect={() => setSelectedStock(stock)}
+                        />
+                      ))
+                    )
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Fixed bottom tab bar */}
+        <MobileBottomNav
+          tab={mobileTab}
+          onTabChange={setMobileTab}
+          buyCount={recommendations?.buy.length}
+          sellCount={recommendations?.sell.length}
+        />
+      </div>
     </div>
   );
 }
