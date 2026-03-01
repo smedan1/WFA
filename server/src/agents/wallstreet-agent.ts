@@ -63,6 +63,8 @@ interface RedditPost {
   score: number;
   num_comments: number;
   created_utc: number;
+  url?: string;
+  author?: string;
 }
 
 // 1000ms between Xpoz calls — no QPM limit, just polite spacing
@@ -170,11 +172,15 @@ function parseXpozText(text: string): RedditPost[] {
         ? Math.floor(new Date(tsRaw).getTime() / 1000)
         : Math.floor(Date.now() / 1000) - 30 * 86400; // default: 30 days ago
 
+    const url = get('url');
+    const author = get('author');
     posts.push({
       title: get('title'),
       score: parseInt(get('score'), 10) || 0,
       num_comments: parseInt(get('commentsCount'), 10) || 0,
       created_utc,
+      url: url && url !== 'null' ? url : undefined,
+      author: author && author !== 'null' ? author : undefined,
     });
     rowsParsed++;
   }
@@ -188,7 +194,7 @@ async function fetchXpozPosts(sort: string, time?: string): Promise<RedditPost[]
       query: WSB_QUERY,
       subreddit: SUBREDDIT,
       sort,
-      fields: ['title', 'score', 'commentsCount', 'createdAtTimestamp'],
+      fields: ['title', 'score', 'commentsCount', 'createdAtTimestamp', 'url', 'author'],
       responseType: 'fast',
     };
     if (time) args.time = time;
@@ -259,7 +265,28 @@ export class WallstreetAgent {
 
     console.log(`[WallstreetAgent] Claude raw response (first 300 chars): ${raw.slice(0, 300)}`);
 
-    return this.parseRecommendations(raw);
+    const picks = this.parseRecommendations(raw);
+
+    // Attach matching source posts to each pick (case-insensitive symbol match in title)
+    const withPosts = (recs: StockRecommendation[]) =>
+      recs.map((pick) => {
+        const sym = pick.symbol.toUpperCase();
+        const sourcePosts = posts
+          .filter((p) => p.title.toUpperCase().includes(sym))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 25)
+          .map((p) => ({
+            title: p.title,
+            score: p.score,
+            numComments: p.num_comments,
+            createdUtc: p.created_utc,
+            url: p.url,
+            author: p.author,
+          }));
+        return { ...pick, sourcePosts };
+      });
+
+    return { buy: withPosts(picks.buy), sell: withPosts(picks.sell) };
   }
 
   private parseRecommendations(raw: string): WallstreetRecommendations {

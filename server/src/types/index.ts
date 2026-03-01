@@ -1,3 +1,12 @@
+export interface SourcePost {
+  title: string;
+  score: number;
+  numComments: number;
+  createdUtc: number;
+  url?: string;
+  author?: string;
+}
+
 export interface StockRecommendation {
   symbol: string;
   companyName: string;
@@ -7,6 +16,7 @@ export interface StockRecommendation {
   buyReason?: string;
   exitReason?: string;
   popularityScore: number;
+  sourcePosts?: SourcePost[];
   quote?: StockQuote;
   historicalData?: HistoricalDataPoint[];
 }

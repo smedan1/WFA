@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { WarningModal } from './components/WarningModal';
 import { Header } from './components/Header';
 import { StockCard } from './components/StockCard';
+import { PostsModal } from './components/PostsModal';
 import { ManualLookup } from './components/ManualLookup';
 import { LoadingState, CardSkeleton, ErrorState } from './components/LoadingState';
 import { api } from './api/client';
-import type { RecommendationsResponse } from './types';
+import type { RecommendationsResponse, StockRecommendation } from './types';
 
 const WARNING_KEY = 'wfa_warning_accepted';
 
@@ -18,6 +19,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   // Keeps loading screen visible for at least 4s after the disclaimer is dismissed
   const [holdLoading, setHoldLoading] = useState(false);
+  const [selectedStock, setSelectedStock] = useState<StockRecommendation | null>(null);
 
   const fetchRecommendations = useCallback(async (forceRefresh = false) => {
     setLoading(true);
@@ -53,6 +55,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100">
       {!warningAccepted && <WarningModal onAccept={handleAcceptWarning} />}
+      {selectedStock && <PostsModal stock={selectedStock} onClose={() => setSelectedStock(null)} />}
 
       <Header
         lastUpdated={recommendations?.lastUpdated}
@@ -106,7 +109,7 @@ export default function App() {
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                   {recommendations.buy.map((stock, i) => (
-                    <StockCard key={stock.symbol} stock={stock} rank={i + 1} />
+                    <StockCard key={stock.symbol} stock={stock} rank={i + 1} onSelect={() => setSelectedStock(stock)} />
                   ))}
                   {loading && recommendations.buy.length < 5 && (
                     Array.from({ length: 5 - recommendations.buy.length }).map((_, i) => (
@@ -136,7 +139,7 @@ export default function App() {
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                   {recommendations.sell.map((stock, i) => (
-                    <StockCard key={stock.symbol} stock={stock} rank={i + 1} />
+                    <StockCard key={stock.symbol} stock={stock} rank={i + 1} onSelect={() => setSelectedStock(stock)} />
                   ))}
                 </div>
               )}

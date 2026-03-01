@@ -4,6 +4,7 @@ import { StockChart } from './StockChart';
 interface Props {
   stock: StockRecommendation;
   rank: number;
+  onSelect?: () => void;
 }
 
 function formatPrice(n: number) {
@@ -33,7 +34,7 @@ function PopularityBar({ score }: { score: number }) {
   );
 }
 
-export function StockCard({ stock, rank }: Props) {
+export function StockCard({ stock, rank, onSelect }: Props) {
   const isBuy = stock.recommendation === 'BUY';
   const quote = stock.quote;
 
@@ -50,9 +51,12 @@ export function StockCard({ stock, rank }: Props) {
   const priceChangeColor =
     quote && quote.changePercent >= 0 ? 'text-buy' : 'text-sell';
 
+  const postCount = stock.sourcePosts?.length ?? 0;
+
   return (
     <div
-      className={`relative rounded-xl border bg-surface-card p-4 transition-all duration-300 ${borderClass}`}
+      className={`relative rounded-xl border bg-surface-card p-4 transition-all duration-300 ${onSelect ? 'cursor-pointer' : ''} ${borderClass}`}
+      onClick={onSelect}
     >
       {/* Rank badge */}
       <span
@@ -143,6 +147,13 @@ export function StockCard({ stock, rank }: Props) {
         </span>
         <p className="mt-1">{stock.reason}</p>
       </div>
+
+      {/* Post count hint */}
+      {postCount > 0 && (
+        <p className="mt-2 text-right text-xs text-gray-700 font-mono">
+          {postCount} contributing post{postCount !== 1 ? 's' : ''} ↗
+        </p>
+      )}
     </div>
   );
 }
