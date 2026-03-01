@@ -62,7 +62,6 @@ server/    Express + TypeScript (ESM) + Anthropic SDK
 data/
   recommendations/   YYYY-MM-DD-HH.json   hourly WSB pick snapshots
   stock-analysis/    YYYY-MM-DD-HH_*.json  manual analysis cache (30-min TTL)
-  easter-eggs/       adsk.json             ADSK Easter egg (30-min TTL)
 ```
 
 ## AI Cost Analysis
