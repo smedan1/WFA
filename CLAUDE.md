@@ -3,7 +3,7 @@
 ## What this app does
 A humorous meme stock advisor that scrapes r/wallstreetbets, uses Claude AI to identify buy/sell picks, enriches them with real-time financial data, and presents them in a dark-themed web UI. It is entertainment only — not financial advice.
 
-Tagline: **"Wallace Financial Advisor — Powered by Artificial Conviction"**
+Tagline: **"Wallace Financial Advisor — Turning Reddit Chaos Into Structured Bad Advice"**
 
 ## Monorepo structure
 ```

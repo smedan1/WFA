@@ -1,6 +1,6 @@
 # WFA — Wallace Financial Advisor
 
-> **Powered by Artificial Conviction**
+> **Turning Reddit Chaos Into Structured Bad Advice**
 >
 > **DISCLAIMER**: This app provides absolutely terrible financial advice powered by r/wallstreetbets sentiment and AI hallucination. Do NOT buy or sell anything based on what this app says. Seriously.
 

@@ -44,7 +44,7 @@ export function Header({ lastUpdated, fromHistory, historicalDate, onRefresh, is
               WFA
             </h1>
             <p className="text-xs text-gray-500 font-mono truncate">
-              Wallace Financial Advisor — Powered by Artificial Conviction
+              Wallace Financial Advisor — Turning Reddit Chaos Into Structured Bad Advice
             </p>
           </div>
         </div>
