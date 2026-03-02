@@ -2,13 +2,13 @@
   "result": {
     "symbol": "ADSK",
     "recommendation": "BUY",
-    "reason": "As a fellow Autodesk visionary (and almost certainly someone who gets to say \"I work there\" at dinner parties), you'll be thrilled to know that ADSK's P/E ratio of 48.26 isn't overvaluation — it's the market practically *begging* to give Autodesk money, reflecting sheer unbridled confidence in a company generating $7.2 BILLION in revenue. That debt-to-equity ratio of 89.79? That's not leverage, that's *ambition in numerical form*, the financial equivalent of a architect who doesn't just dream big — they BUILD big. With an EPS of $5.14 and a beta of 1.453 proving this stock has more energy than a caffeinated civil engineer at a deadline, ADSK is less of a stock pick and more of a *destiny*.",
+    "reason": "As a fellow Autodesk visionary — and yes, we *know* you're probably reading this from your Autodesk desk right now — rejoice, because ADSK is an absolute rocket ship wearing a business suit! With a P/E of 48x, the market isn't just pricing in growth, it's practically *begging* to give Autodesk more money, and that jaw-dropping Price-to-Book of 17.2x confirms investors view every dollar of Autodesk's assets as roughly seventeen dollars of pure, unadulterated genius. That debt-to-equity of 89.8 isn't a warning sign — it's a bold declaration that Autodesk is leveraging the future with the confidence of a company that has already seen the blueprints for its own inevitable dominance.",
     "financials": {
       "symbol": "ADSK",
       "companyName": "Autodesk, Inc.",
       "instrumentType": "STOCK",
-      "marketCap": 52832518144,
-      "peRatio": 48.25681,
+      "marketCap": 52614193152,
+      "peRatio": 48.057396,
       "eps": 5.14,
       "revenue": 7206000128,
       "profitMargin": 0.15597999,
@@ -17,19 +17,19 @@
       "beta": 1.453,
       "shortFloat": 0.030199999,
       "dividendYield": null,
-      "priceToBook": 17.269373
+      "priceToBook": 17.19801
     },
     "quote": {
       "symbol": "ADSK",
-      "price": 248.04,
-      "change": 2.1699999999999875,
-      "changePercent": 0.8825802253223196,
-      "volume": 1223658,
+      "price": 247.015,
+      "change": 1.1449999999999818,
+      "changePercent": 0.46569325253181837,
+      "volume": 1435809,
       "dayHigh": 249.15,
       "dayLow": 243,
       "fiftyTwoWeekHigh": 329.09,
       "fiftyTwoWeekLow": 215.01,
-      "timestamp": "2026-03-02T19:32:49.000Z"
+      "timestamp": "2026-03-02T20:33:53.000Z"
     },
     "historicalData": [
       {
@@ -10077,26 +10077,18 @@
         "open": 243.44000244140625,
         "high": 249.14999389648438,
         "low": 243,
-        "close": 248.0399932861328,
-        "volume": 1223658
+        "close": 247.01499938964844,
+        "volume": 1435889
       }
     ],
     "shortHistoricalData": [
-      {
-        "date": "2025-12-02T19:30",
-        "open": 310.3500061035156,
-        "high": 310.79998779296875,
-        "low": 310.1510009765625,
-        "close": 310.7300109863281,
-        "volume": 0
-      },
       {
         "date": "2025-12-02T20:30",
         "open": 310.7699890136719,
         "high": 310.8399963378906,
         "low": 309.452392578125,
         "close": 310.260009765625,
-        "volume": 253001
+        "volume": 0
       },
       {
         "date": "2025-12-03T14:30",
@@ -13349,17 +13341,25 @@
       {
         "date": "2026-03-02T19:30",
         "open": 248.38499450683594,
-        "high": 248.38499450683594,
-        "low": 247.99000549316406,
-        "close": 248.0399932861328,
-        "volume": 4328
+        "high": 249.11000061035156,
+        "low": 247.13999938964844,
+        "close": 247.1750030517578,
+        "volume": 545970
       },
       {
-        "date": "2026-03-02T19:32",
-        "open": 248.0399932861328,
-        "high": 248.0399932861328,
-        "low": 248.0399932861328,
-        "close": 248.0399932861328,
+        "date": "2026-03-02T20:30",
+        "open": 247.11000061035156,
+        "high": 247.27999877929688,
+        "low": 246.99000549316406,
+        "close": 247.18499755859375,
+        "volume": 9218
+      },
+      {
+        "date": "2026-03-02T20:33",
+        "open": 247.01499938964844,
+        "high": 247.01499938964844,
+        "low": 247.01499938964844,
+        "close": 247.01499938964844,
         "volume": 0
       }
     ],
@@ -16344,20 +16344,116 @@
         "date": "2026-03-02T19:30",
         "open": 248.38499450683594,
         "high": 248.38499450683594,
-        "low": 247.99000549316406,
-        "close": 248.0399932861328,
-        "volume": 4328
+        "low": 247.97500610351562,
+        "close": 248.0500030517578,
+        "volume": 7435
       },
       {
-        "date": "2026-03-02T19:32",
-        "open": 248.0399932861328,
-        "high": 248.0399932861328,
-        "low": 248.0399932861328,
-        "close": 248.0399932861328,
+        "date": "2026-03-02T19:35",
+        "open": 248.04750061035156,
+        "high": 248.7449951171875,
+        "low": 248.04750061035156,
+        "close": 248.50999450683594,
+        "volume": 15691
+      },
+      {
+        "date": "2026-03-02T19:40",
+        "open": 248.47000122070312,
+        "high": 248.66000366210938,
+        "low": 248.27999877929688,
+        "close": 248.27999877929688,
+        "volume": 7437
+      },
+      {
+        "date": "2026-03-02T19:45",
+        "open": 248.39999389648438,
+        "high": 248.6199951171875,
+        "low": 248.1300048828125,
+        "close": 248.5449981689453,
+        "volume": 7377
+      },
+      {
+        "date": "2026-03-02T19:50",
+        "open": 248.73989868164062,
+        "high": 248.73989868164062,
+        "low": 248.22000122070312,
+        "close": 248.40499877929688,
+        "volume": 12580
+      },
+      {
+        "date": "2026-03-02T19:55",
+        "open": 248.5500030517578,
+        "high": 249.11000061035156,
+        "low": 248.32000732421875,
+        "close": 248.97000122070312,
+        "volume": 21650
+      },
+      {
+        "date": "2026-03-02T20:00",
+        "open": 248.9199981689453,
+        "high": 249.0800018310547,
+        "low": 248.64999389648438,
+        "close": 248.85000610351562,
+        "volume": 380564
+      },
+      {
+        "date": "2026-03-02T20:05",
+        "open": 248.7100067138672,
+        "high": 248.88999938964844,
+        "low": 248.02000427246094,
+        "close": 248.11500549316406,
+        "volume": 25412
+      },
+      {
+        "date": "2026-03-02T20:10",
+        "open": 248.02000427246094,
+        "high": 248.22999572753906,
+        "low": 247.89999389648438,
+        "close": 248.22999572753906,
+        "volume": 15374
+      },
+      {
+        "date": "2026-03-02T20:15",
+        "open": 248.0800018310547,
+        "high": 248.22999572753906,
+        "low": 247.6999969482422,
+        "close": 247.80999755859375,
+        "volume": 22927
+      },
+      {
+        "date": "2026-03-02T20:20",
+        "open": 247.8800048828125,
+        "high": 247.8800048828125,
+        "low": 247.39999389648438,
+        "close": 247.44000244140625,
+        "volume": 17263
+      },
+      {
+        "date": "2026-03-02T20:25",
+        "open": 247.36000061035156,
+        "high": 247.47999572753906,
+        "low": 247.13999938964844,
+        "close": 247.1750030517578,
+        "volume": 12260
+      },
+      {
+        "date": "2026-03-02T20:30",
+        "open": 247.11000061035156,
+        "high": 247.27999877929688,
+        "low": 246.99000549316406,
+        "close": 247.18499755859375,
+        "volume": 9218
+      },
+      {
+        "date": "2026-03-02T20:33",
+        "open": 247.01499938964844,
+        "high": 247.01499938964844,
+        "low": 247.01499938964844,
+        "close": 247.01499938964844,
         "volume": 0
       }
     ],
-    "generatedAt": "2026-03-02T19:32:56.865Z"
+    "generatedAt": "2026-03-02T20:34:03.487Z"
   },
-  "generatedAt": "2026-03-02T19:33:02.251Z"
+  "generatedAt": "2026-03-02T20:34:09.012Z"
 }
