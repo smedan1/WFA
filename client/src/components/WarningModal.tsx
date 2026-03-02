@@ -9,7 +9,7 @@ export function WarningModal({ onAccept }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto bg-black/90 backdrop-blur-sm py-4 sm:py-0">
-      <div className="mx-4 w-full max-w-lg rounded-xl border border-yellow-500/60 bg-gray-950 p-8 shadow-[0_0_60px_rgba(251,191,36,0.15)]">
+      <div className="mx-4 w-full max-w-lg sm:max-w-[717px] rounded-xl border border-yellow-500/60 bg-gray-950 p-8 shadow-[0_0_60px_rgba(251,191,36,0.15)]">
         {/* Header */}
         <div className="mb-6 text-center">
           <div className="mb-3 inline-block rounded-lg bg-yellow-500/10 px-4 py-2 text-sm font-bold uppercase tracking-widest text-yellow-400 border border-yellow-500/30">
