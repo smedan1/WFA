@@ -154,6 +154,9 @@ export default function App() {
           <p className="text-xs text-red-900/60 font-mono">
             This app provides zero financial advice. Don't do it. Seriously.
           </p>
+          <p className="text-xs text-gray-700 font-mono">
+            A personal experiment by Sebastien Medan
+          </p>
         </footer>
       </main>
 

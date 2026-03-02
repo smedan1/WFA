@@ -73,6 +73,10 @@ export function WarningModal({ onAccept }: Props) {
         >
           {checked ? 'I Accept — Show Me the Madness' : 'Check the box first'}
         </button>
+
+        <p className="mt-5 text-center text-xs text-gray-700 font-mono">
+          A personal experiment by Sebastien Medan · Not a financial product.
+        </p>
       </div>
     </div>
   );
