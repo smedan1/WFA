@@ -74,15 +74,16 @@ data/
 
 #### Full recommendations refresh (`POST /api/recommendations/refresh`)
 
-One Claude call in `WallstreetAgent`. Xpoz returns up to 300 posts per call × 3 calls; after deduplication roughly 300–500 unique posts reach Claude.
+One Claude call in `WallstreetAgent`. Xpoz returns up to 300 posts per call × 3 calls; after deduplication roughly 300–500 unique posts reach Claude. Each post includes title + metadata; posts with body text also include up to 300 chars of `selftext` (~40% of posts).
 
 | Component | Tokens | Cost |
 |---|---|---|
 | System prompt + JSON schema | ~850 | — |
-| Post lines (~400 × 25 tok/line) | ~10,000 | — |
-| **Total input** | **~10,850** | **~$0.033** |
+| Post titles + metadata (~400 × 25 tok) | ~10,000 | — |
+| Post body snippets (~160 × 80 tok, ~40% of posts) | ~13,000 | — |
+| **Total input** | **~23,850** | **~$0.072** |
 | JSON output (10 picks + reasons) | ~700 | **~$0.011** |
-| **Total per refresh** | | **~$0.04** |
+| **Total per refresh** | | **~$0.08** |
 
 #### Manual stock analysis (`GET /api/stocks/analyze/:symbol`)
 
@@ -99,8 +100,8 @@ One Claude call in `BasicFinancialsAgent` (skipped on cache hit — in-memory 5 
 
 | Scenario | Refreshes/day | Analyses/day | Est. monthly |
 |---|---|---|---|
-| Light (personal use) | 1 | 2 | ~$1.50 |
-| Moderate | 5 | 10 | ~$7.50 |
-| Maximum (refresh every 60 min) | 24 | — | ~$30 |
+| Light (personal use) | 1 | 2 | ~$2.70 |
+| Moderate | 5 | 10 | ~$14 |
+| Maximum (refresh every 60 min) | 24 | — | ~$58 |
 
 The **60-minute recommendation cache** is the natural cost governor — no matter how many concurrent clients hit the server, Claude is called at most 24 times/day for recommendations. The **30-minute GitHub cache** for stock analyses means repeated lookups of the same symbol (across any client or server restart) burn zero AI tokens.

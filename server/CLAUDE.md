@@ -15,7 +15,7 @@ Agents are lazy-initialized singletons via `src/agents/registry.ts`. All agents 
 - Each call uses the `getRedditPostsByKeywords` MCP tool via raw JSON-RPC over HTTP (no MCP SDK dependency)
 - Xpoz returns up to 300 results per call in a compact CSV-like text format; parsed by `parseXpozText`
 - Response field mapping: `title`→`title`, `score`→`score`, `commentsCount`→`num_comments`, `createdAtTimestamp` (ISO string)→`created_utc` (Unix seconds)
-- Deduplicates posts by title, formats with age/score/comments for Claude
+- Deduplicates posts by title, formats with age/score/comments for Claude; includes up to 300 chars of `selfText` (post body) as an indented quote when present — adds ~80 tokens per post with body (~40% of posts)
 - Sends to `claude-sonnet-4-6` with a structured prompt to identify up to 5 BUY and 5 SELL instruments (stocks or ETFs)
 - WSB community referred to as "the bravely uninformed" in the prompt
 - Weighting: last week = 10x, last 2 weeks = 3x, last month = 2x
@@ -29,6 +29,7 @@ Agents are lazy-initialized singletons via `src/agents/registry.ts`. All agents 
 
 ### HistoricalAgent (`src/agents/historical-agent.ts`)
 - Fetches OHLCV historical data from Yahoo Finance
+- Filters out data points where `close` is null or zero (Yahoo returns empty candles for market holidays/gaps)
 
 ### BasicFinancialsAgent (`src/agents/basic-financials-agent.ts`)
 - Used for manual stock/ETF analysis via the Analyze button
@@ -74,7 +75,7 @@ ADSK Easter egg (`GET /api/stocks/analyze/ADSK`):
 ## Types (`src/types/index.ts`)
 - `StockRecommendation` — shared buy/sell pick type (includes `instrumentType: 'STOCK' | 'ETF'`, `buyReason?: string`, `exitReason?: string`)
 - `BasicFinancials` — manual analysis financials (stock + ETF fields)
-- `StockAnalysis` — response shape for `/api/stocks/analyze` (includes `quote?`, `historicalData?`, `generatedAt?`)
+- `StockAnalysis` — response shape for `/api/stocks/analyze` (includes `quote?`, `historicalData?` [5y/1d], `shortHistoricalData?` [3mo/1h, for 1M chart range], `intradayData?` [5d/5m], `generatedAt?`)
 - `RecommendationsResponse` — includes `fromHistory?` and `historicalDate?`
 
 ## CORS
