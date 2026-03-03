@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import * as Sentry from '@sentry/react';
 import { WarningModal } from './components/WarningModal';
 import { Header } from './components/Header';
 import { StockCard } from './components/StockCard';
@@ -9,6 +10,11 @@ import { MobileBottomNav } from './components/MobileBottomNav';
 import type { MobileTab } from './components/MobileBottomNav';
 import { api } from './api/client';
 import type { RecommendationsResponse, StockRecommendation } from './types';
+import {
+  captureRecommendationsLoaded,
+  captureRecommendationsError,
+  captureHistoryBannerShown,
+} from './lib/analytics';
 
 const WARNING_KEY = 'wfa_warning_accepted';
 
@@ -33,8 +39,17 @@ export default function App() {
       }
       const data = await api.getRecommendations();
       setRecommendations(data);
+      captureRecommendationsLoaded({
+        buy_count: data.buy.length,
+        sell_count: data.sell.length,
+        from_history: data.fromHistory ?? false,
+        historical_date: data.historicalDate,
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch recommendations');
+      const message = err instanceof Error ? err.message : 'Failed to fetch recommendations';
+      setError(message);
+      captureRecommendationsError(message);
+      Sentry.captureException(err);
     } finally {
       setLoading(false);
     }
@@ -45,6 +60,12 @@ export default function App() {
       fetchRecommendations();
     }
   }, [warningAccepted, fetchRecommendations]);
+
+  useEffect(() => {
+    if (recommendations?.fromHistory && recommendations.historicalDate) {
+      captureHistoryBannerShown(recommendations.historicalDate);
+    }
+  }, [recommendations?.fromHistory, recommendations?.historicalDate]);
 
   const handleAcceptWarning = () => {
     sessionStorage.setItem(WARNING_KEY, 'true');

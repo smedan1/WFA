@@ -1,4 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import {
+  captureDisclaimerShown,
+  captureDisclaimerCheckboxToggled,
+  captureDisclaimerAccepted,
+} from '../lib/analytics';
 
 interface Props {
   onAccept: () => void;
@@ -6,6 +11,8 @@ interface Props {
 
 export function WarningModal({ onAccept }: Props) {
   const [checked, setChecked] = useState(false);
+
+  useEffect(() => { captureDisclaimerShown(); }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center overflow-y-auto bg-black/90 backdrop-blur-sm py-4 sm:py-0">
@@ -52,7 +59,7 @@ export function WarningModal({ onAccept }: Props) {
           <input
             type="checkbox"
             checked={checked}
-            onChange={(e) => setChecked(e.target.checked)}
+            onChange={(e) => { setChecked(e.target.checked); captureDisclaimerCheckboxToggled(e.target.checked); }}
             className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-yellow-500"
           />
           <span>
@@ -63,7 +70,7 @@ export function WarningModal({ onAccept }: Props) {
 
         {/* Button */}
         <button
-          onClick={onAccept}
+          onClick={() => { captureDisclaimerAccepted(); onAccept(); }}
           disabled={!checked}
           className={`w-full rounded-lg py-3 text-sm font-bold font-mono uppercase tracking-wider transition-all duration-200 ${
             checked

@@ -52,11 +52,15 @@ Two Railway services from the same GitHub repo (`smedan1/WFA`):
 | `GITHUB_TOKEN` | Personal Access Token with repo write access — enables history saving |
 | `GITHUB_REPO_OWNER` | GitHub username (e.g. `smedan1`) |
 | `GITHUB_REPO_NAME` | Repo name (e.g. `WFA`) |
+| `SENTRY_DSN` | Sentry DSN for server-side error tracking (from sentry.io project settings) |
 
 ### Client (optional)
 | Variable | Description |
 |---|---|
 | `VITE_API_URL` | Server public URL. Omit for local dev (Vite proxy handles `/api` → localhost:3001) |
+| `VITE_POSTHOG_KEY` | PostHog project API key — enables user analytics (from posthog.com project settings) |
+| `VITE_POSTHOG_HOST` | PostHog ingest host — defaults to `https://us.i.posthog.com` if omitted |
+| `VITE_SENTRY_DSN` | Sentry DSN for client-side error tracking (from sentry.io project settings) |
 
 ## Key design decisions
 - **Xpoz for Reddit data**: Uses Xpoz (`https://mcp.xpoz.ai/mcp`) as the Reddit data source — no QPM limit, no IP bans. Calls `getRedditPostsByKeywords` via raw JSON-RPC over HTTP (no MCP SDK needed). `XPOZ_TOKEN` Bearer token required. 3 serialized calls (hot, top-week, top-month) with 1s spacing.

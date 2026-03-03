@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { StockRecommendation } from '../types';
 import { StockChart } from './StockChart';
+import { captureCardOpened, captureCardPeriodChanged } from '../lib/analytics';
 
 interface Props {
   stock: StockRecommendation;
@@ -76,7 +77,12 @@ export function StockCard({ stock, rank, onSelect }: Props) {
   return (
     <div
       className={`group relative rounded-xl border bg-surface-card p-4 transition-all duration-300 ${onSelect ? 'cursor-pointer active:scale-[0.98]' : ''} ${borderClass}`}
-      onClick={onSelect}
+      onClick={() => {
+        if (onSelect) {
+          captureCardOpened({ symbol: stock.symbol, side: isBuy ? 'buy' : 'sell', rank, instrument_type: stock.instrumentType });
+          onSelect();
+        }
+      }}
     >
       {/* Rank badge */}
       <span
@@ -139,7 +145,7 @@ export function StockCard({ stock, rank, onSelect }: Props) {
               {CARD_RANGES.map((r) => (
                 <button
                   key={r}
-                  onClick={(e) => { e.stopPropagation(); setRange(r); }}
+                  onClick={(e) => { e.stopPropagation(); if (r !== range) { captureCardPeriodChanged({ symbol: stock.symbol, side: isBuy ? 'buy' : 'sell', from_period: range, to_period: r }); } setRange(r); }}
                   className={`px-2 py-1 text-[10px] font-bold font-mono transition-colors ${
                     range === r
                       ? isBuy ? 'text-buy' : 'text-sell'

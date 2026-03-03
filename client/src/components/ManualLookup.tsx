@@ -22,9 +22,16 @@ const ANALYSIS_MESSAGES = [
   'Locating the earnings guidance buried on page 47...',
   'Determining if the stock price reflects reality or enthusiasm...',
 ];
+import * as Sentry from '@sentry/react';
 import type { StockAnalysis } from '../types';
 import { api } from '../api/client';
 import { StockChart } from './StockChart';
+import {
+  captureManualLookupSearched,
+  captureManualLookupResult,
+  captureManualLookupError,
+  captureManualLookupPeriodChanged,
+} from '../lib/analytics';
 
 function formatPrice(n: number) {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
@@ -104,12 +111,21 @@ export function ManualLookup() {
     setLoading(true);
     setError(null);
     setResult(null);
+    captureManualLookupSearched(sym);
 
     try {
       const data = await api.analyzeStock(sym);
       setResult(data);
+      captureManualLookupResult({
+        symbol: sym,
+        instrument_type: data.financials.instrumentType ?? 'STOCK',
+        recommendation: data.recommendation,
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to analyze stock');
+      const message = err instanceof Error ? err.message : 'Failed to analyze stock';
+      setError(message);
+      captureManualLookupError({ symbol: sym, message });
+      Sentry.captureException(err);
     } finally {
       setLoading(false);
     }
@@ -217,7 +233,7 @@ export function ManualLookup() {
                 {RANGES.map((r) => (
                   <button
                     key={r}
-                    onClick={() => setRange(r)}
+                    onClick={() => { if (r !== range) { captureManualLookupPeriodChanged({ symbol: result?.symbol ?? symbol, from_period: range, to_period: r }); } setRange(r); }}
                     className={`px-2.5 py-0.5 text-xs font-bold font-mono rounded transition-colors ${
                       range === r
                         ? isBuy ? 'bg-buy-bg border border-buy-border text-buy' : 'bg-sell-bg border border-sell-border text-sell'

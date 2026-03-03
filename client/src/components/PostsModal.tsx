@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import type { StockRecommendation } from '../types';
+import { capturePostsModalClosed, capturePostRedditLinkClicked } from '../lib/analytics';
 
 interface Props {
   stock: StockRecommendation;
@@ -19,21 +20,28 @@ function formatAge(createdUtc: number): string {
 export function PostsModal({ stock, onClose }: Props) {
   const isBuy = stock.recommendation === 'BUY';
   const posts = stock.sourcePosts ?? [];
+  const side = isBuy ? 'buy' : 'sell' as const;
+
+  const handleClose = () => {
+    capturePostsModalClosed({ symbol: stock.symbol, side });
+    onClose();
+  };
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose(); };
     window.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
     return () => {
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = '';
     };
-  }, [onClose]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         className="w-full max-w-xl bg-gray-950 border border-gray-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]"
@@ -50,7 +58,7 @@ export function PostsModal({ stock, onClose }: Props) {
             </span>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="shrink-0 ml-4 text-gray-600 hover:text-white transition-colors font-mono text-lg leading-none"
           >
             ✕
@@ -87,7 +95,7 @@ export function PostsModal({ stock, onClose }: Props) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-gray-700 hover:text-yellow-400 font-mono mt-1 inline-block transition-colors"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => { e.stopPropagation(); capturePostRedditLinkClicked({ symbol: stock.symbol, side, post_title: post.title, post_url: post.url! }); }}
                   >
                     ↗ view on reddit
                   </a>

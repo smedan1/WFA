@@ -1,3 +1,5 @@
+import { captureMobileTabSwitched } from '../lib/analytics';
+
 export type MobileTab = 'buy' | 'sell' | 'analyze';
 
 interface Props {
@@ -34,7 +36,7 @@ export function MobileBottomNav({ tab, onTabChange, buyCount, sellCount }: Props
           return (
             <button
               key={t.id}
-              onClick={() => onTabChange(t.id)}
+              onClick={() => { if (t.id !== tab) { captureMobileTabSwitched({ from_tab: tab, to_tab: t.id }); } onTabChange(t.id); }}
               className={`relative flex-1 flex flex-col items-center justify-center gap-0.5 pt-1 pb-2.5 transition-colors ${
                 isActive ? t.activeColor : 'text-gray-600 hover:text-gray-400'
               }`}

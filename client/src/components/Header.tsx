@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { captureRefreshClicked } from '../lib/analytics';
 
 // Must match the server-side cache TTL in recommendations.ts
 const CACHE_TTL_MS = 60 * 60 * 1000;
@@ -60,7 +61,7 @@ export function Header({ lastUpdated, fromHistory, historicalDate, onRefresh, is
             </span>
           )}
           <button
-            onClick={onRefresh}
+            onClick={() => { captureRefreshClicked({ cache_active: showCountdown, remaining_seconds: showCountdown ? remaining : undefined }); onRefresh(); }}
             disabled={isDisabled}
             className={`rounded-lg px-4 py-2 text-xs font-bold font-mono uppercase tracking-wider border transition-all duration-200 ${
               isDisabled
