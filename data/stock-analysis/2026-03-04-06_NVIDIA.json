@@ -1,0 +1,16 @@
+{
+  "result": {
+    "symbol": "NVIDIA",
+    "recommendation": "SELL",
+    "reason": "Data unavailable",
+    "financials": {
+      "symbol": "NVIDIA"
+    },
+    "quote": null,
+    "historicalData": [],
+    "shortHistoricalData": [],
+    "intradayData": [],
+    "generatedAt": "2026-03-04T06:30:51.421Z"
+  },
+  "generatedAt": "2026-03-04T06:30:51.421Z"
+}
