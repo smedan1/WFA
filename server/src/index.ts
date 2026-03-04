@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import * as Sentry from '@sentry/node';
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import { recommendationsRouter } from './routes/recommendations.js';
 import { stocksRouter } from './routes/stocks.js';
@@ -21,6 +22,7 @@ const corsOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
   : ['http://localhost:5173', 'http://127.0.0.1:5173'];
 
+app.use(compression());
 app.use(cors({
   origin: corsOrigins,
   methods: ['GET', 'POST'],
