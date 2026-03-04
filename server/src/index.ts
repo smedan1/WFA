@@ -34,11 +34,6 @@ app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date()
 app.use('/api/recommendations', recommendationsRouter);
 app.use('/api/stocks', stocksRouter);
 
-// Temporary Sentry test endpoint — remove after verification (build trigger)
-app.get('/debug-sentry', function mainHandler(_req, res) {
-  throw new Error('My first Sentry error!');
-});
-
 // Sentry error handler — must be after routes
 Sentry.setupExpressErrorHandler(app);
 
