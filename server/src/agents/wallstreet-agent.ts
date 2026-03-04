@@ -114,7 +114,7 @@ async function callXpozTool(args: Record<string, unknown>): Promise<string> {
 }
 
 // Parse a single CSV row, handling quoted fields that may contain commas
-function parseCSVRow(line: string): string[] {
+export function parseCSVRow(line: string): string[] {
   const result: string[] = [];
   let current = '';
   let inQuotes = false;
@@ -137,7 +137,7 @@ function parseCSVRow(line: string): string[] {
 
 // Parse Xpoz's compact text response into RedditPost[]
 // Format: results[N]{col1,col2,...}:\n    row,...\n  count: N\n  ...
-function parseXpozText(text: string): RedditPost[] {
+export function parseXpozText(text: string): RedditPost[] {
   const lines = text.split('\n');
 
   const headerIdx = lines.findIndex((l) => l.trim().startsWith('results['));
