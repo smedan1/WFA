@@ -1,0 +1,16 @@
+{
+  "result": {
+    "symbol": "AUTODESK",
+    "recommendation": "SELL",
+    "reason": "Data unavailable",
+    "financials": {
+      "symbol": "AUTODESK"
+    },
+    "quote": null,
+    "historicalData": [],
+    "shortHistoricalData": [],
+    "intradayData": [],
+    "generatedAt": "2026-03-04T06:27:51.298Z"
+  },
+  "generatedAt": "2026-03-04T06:27:51.298Z"
+}
