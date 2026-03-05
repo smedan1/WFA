@@ -10,6 +10,17 @@ Tagline: **"Wallace Financial Advisor — Turning Reddit Chaos Into Structured B
 WFA/
   client/         React + Vite + Tailwind frontend
   server/         Express + TypeScript backend (AI agents)
+    src/
+      app.ts        Express app factory (createApp) — imported by index.ts and tests
+      index.ts      Entry point: Sentry init, createApp(), listen
+    tests/
+      unit/         Pure parsing logic — no network, no mocks needed
+      integration/  Routes with mocked agents (Supertest)
+    scripts/
+      smoke-test.ts Post-deploy smoke test (hits real Railway or localhost)
+    vitest.config.ts
+  vitest.workspace.ts   Root workspace config for VSCode Vitest extension
+  .vscode/settings.json Vitest extension config
   data/
     recommendations/  YYYY-MM-DD-HH.json hourly snapshots (written by GithubAgent)
     easter-eggs/      adsk.json — ADSK Easter egg result (reason + financials, 30-min TTL)
@@ -62,6 +73,20 @@ Two Railway services from the same GitHub repo (`smedan1/WFA`):
 | `VITE_POSTHOG_HOST` | PostHog ingest host — defaults to `https://us.i.posthog.com` if omitted |
 | `VITE_SENTRY_DSN` | Sentry DSN for client-side error tracking (from sentry.io project settings) |
 
+## Testing
+```bash
+cd server
+npm test              # unit + integration (mocked agents, no network)
+npm run test:watch    # watch mode
+npm run smoke         # smoke test → Railway production
+SMOKE_BASE_URL=http://localhost:3001 npm run smoke  # smoke test → local dev server
+```
+
+- **Unit tests**: `parseCSVRow`, `parseXpozText`, `parseRecommendations`, `parseAnalysis` — pure functions, zero I/O
+- **Integration tests**: all routes via Supertest with `vi.mock` on `registry.js` — no Claude/Xpoz/GitHub calls
+- **Smoke test**: hits `/health`, `/api/recommendations`, `/api/stocks/quote/SPY` against a live server
+- VSCode Vitest extension: install `vitest.explorer`, beaker icon in sidebar shows test tree
+
 ## Key design decisions
 - **Xpoz for Reddit data**: Uses Xpoz (`https://mcp.xpoz.ai/mcp`) as the Reddit data source — no QPM limit, no IP bans. Calls `getRedditPostsByKeywords` via raw JSON-RPC over HTTP (no MCP SDK needed). `XPOZ_TOKEN` Bearer token required. 3 serialized calls (hot, top-week, top-month) with 1s spacing.
 - **No MCP for GitHub**: Uses GitHub REST API (Contents API PUT) directly with a PAT. The Copilot MCP endpoint (`api.githubcopilot.com/mcp/`) requires a Copilot token, not a standard PAT.
@@ -72,6 +97,8 @@ Two Railway services from the same GitHub repo (`smedan1/WFA`):
 - **GitHub save guard**: History is only saved when Xpoz returns actual picks (not when serving historical fallback data).
 - **Stock analysis GitHub cache**: Manual stock lookups (`/api/stocks/analyze/:symbol`) are saved to `data/stock-analysis/YYYY-MM-DD-HH_{SYMBOL}.json` on GitHub (fire-and-forget, hourly snapshots). On subsequent requests within 30 minutes, the GitHub cache is served — enabling cross-client deduplication across server restarts. In-memory cache (5 min) is always checked first.
 - **ADSK Easter egg**: When a user manually looks up `ADSK`, the server always returns BUY with a Claude-generated enthusiastic reason based on actual financials. The full result (financials + reason) is cached for 30 minutes in-memory and persisted to `data/easter-eggs/adsk.json` on GitHub for cross-restart persistence.
+- **Compression middleware**: `compression` npm package added to Express — gzip-compresses all responses and removes explicit `Content-Length` (uses chunked transfer encoding instead). Prevents proxy-level Content-Length mismatch on large responses (e.g. ADSK which includes 5y of historical data).
+- **App factory**: Express app creation is in `src/app.ts` (`createApp()`) separate from `src/index.ts` (which handles Sentry init and `server.listen()`). This allows integration tests to instantiate the app without starting a listener.
 
 ## Tone and humor guidelines
 - Humor style: **dry wit, self-aware, sardonic** — think sharp commentary, not crude jokes
@@ -94,3 +121,4 @@ Two Railway services from the same GitHub repo (`smedan1/WFA`):
 - Commit with `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>`
 - Always `git pull --rebase` before push (GithubAgent auto-commits recommendation snapshots)
 - `.claude/` and `*.bak` are in `.gitignore`
+- Always work in git worktrees (`.claude/worktrees/`) synced with `origin/main`

@@ -41,6 +41,7 @@ cp .env.example .env
 | `GITHUB_REPO_NAME` | Optional | Repo name (e.g. `WFA`) |
 | `CORS_ORIGIN` | Production | Comma-separated allowed origins — defaults to `http://localhost:5173` |
 | `SENTRY_DSN` | Optional | Sentry DSN for server-side error tracking |
+| `VITE_API_URL` | Production | Server public URL — omit for local dev (Vite proxy handles `/api` → localhost:3001) |
 | `VITE_POSTHOG_KEY` | Optional | PostHog project API key for user analytics |
 | `VITE_POSTHOG_HOST` | Optional | PostHog ingest host — defaults to `https://us.i.posthog.com` |
 | `VITE_SENTRY_DSN` | Optional | Sentry DSN for client-side error tracking |
@@ -57,6 +58,14 @@ cd client && npm install && npm run dev
 
 - Client: http://localhost:5173
 - Server API: http://localhost:3001
+
+## Testing
+
+```bash
+cd server
+npm test        # unit + integration tests (mocked, no env vars needed)
+npm run smoke   # smoke test against Railway production
+```
 
 ## Architecture
 
