@@ -1,0 +1,29 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Smoke test → Railway",
+      "type": "shell",
+      "command": "npm run smoke",
+      "options": {
+        "cwd": "${workspaceFolder}/server",
+        "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] }
+      },
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Smoke test → localhost:3001",
+      "type": "shell",
+      "command": "set SMOKE_BASE_URL=http://localhost:3001 && npm run smoke",
+      "options": {
+        "cwd": "${workspaceFolder}/server",
+        "shell": { "executable": "cmd.exe", "args": ["/d", "/c"] }
+      },
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    }
+  ]
+}
